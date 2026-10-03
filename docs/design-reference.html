@@ -1,0 +1,969 @@
+<title>Happy Nails</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one long storefront. Hero with a self-drawing brush ring, collection, size finder, home-visit booking stepper, video stories, promises, FAQ.
+   Light = Atelier Ivory (pale gallery ground, ink, gold leaf, Bodoni). Dark = Noir Rosé (espresso, rose gold, Cormorant). One toggle swaps tokens, display face and cursor effect. */
+:root{
+  --bg:#F4F3F1; --bg2:#ECEAE6; --panel:#FBFAF9; --fg:#2E2B2B; --muted:#625D5C; --line:#D8D4CF;
+  --accent:#2E2B2B; --accentfg:#F4F3F1; --hover:#7A6B40; --hoverfg:#FFFFFF; --gold:#7A6B40; --blush:#EADDDA; --ok:#3F6B4A; --err:#A23A33;
+  --display:"Bodoni Moda","Didot",Georgia,serif; --body:"Manrope",system-ui,sans-serif;
+  --hs:1; --r:2px; --rb:999px; --ease:cubic-bezier(.2,.7,.1,1);
+  --spot-size:34px; --spot-bg:transparent; --spot-bd:1px solid var(--gold); --spot-blend:normal; --shadow:0 18px 40px -22px rgba(46,43,43,.35);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151012; --bg2:#1B1416; --panel:#211A1C; --fg:#F3E9E6; --muted:#B5A5A1; --line:#3A2E31;
+  --accent:#D49C8B; --accentfg:#1A1012; --hover:#EDBBA9; --hoverfg:#1A1012; --gold:#D49C8B; --blush:#3A2229; --ok:#8FC59A; --err:#F0877D;
+  --display:"Cormorant Garamond","Georgia",serif; --hs:1.14;
+  --spot-size:560px; --spot-bg:radial-gradient(circle,rgba(212,156,139,.17),transparent 62%); --spot-bd:0; --spot-blend:screen; --shadow:0 22px 50px -24px rgba(0,0,0,.8); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151012; --bg2:#1B1416; --panel:#211A1C; --fg:#F3E9E6; --muted:#B5A5A1; --line:#3A2E31;
+  --accent:#D49C8B; --accentfg:#1A1012; --hover:#EDBBA9; --hoverfg:#1A1012; --gold:#D49C8B; --blush:#3A2229; --ok:#8FC59A; --err:#F0877D;
+  --display:"Cormorant Garamond","Georgia",serif; --hs:1.14;
+  --spot-size:560px; --spot-bg:radial-gradient(circle,rgba(212,156,139,.17),transparent 62%); --spot-bd:0; --spot-blend:screen; --shadow:0 22px 50px -24px rgba(0,0,0,.8); color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6;padding-inline:clamp(16px,4vw,52px);transition:background .5s,color .5s;overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.005em}
+p{margin:0}
+em{font-style:italic}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap{max-width:1240px;margin-inline:auto}
+.eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.h2{font-size:calc(clamp(34px,5vw,60px)*var(--hs));line-height:1.02}
+.sec{padding-block:clamp(64px,10vw,120px);display:flex;flex-direction:column;gap:clamp(28px,4vw,48px)}
+.sec-head{display:flex;flex-wrap:wrap;gap:16px 40px;align-items:end;justify-content:space-between}
+.sec-head>div{display:flex;flex-direction:column;gap:12px;max-width:640px;min-width:0}
+.sec-head p.sub{color:var(--muted);max-width:52ch}
+.rv{transform:translateY(30px);transition:transform 1s var(--ease)}
+.rv.in{transform:none}
+
+/* buttons */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--accent);background:var(--accent);color:var(--accentfg);border-radius:var(--rb);padding:14px 28px;font-weight:600;font-size:13px;letter-spacing:.06em;text-decoration:none;transition:background .35s,color .35s,border-color .35s,transform .25s var(--ease)}
+.btn:hover{background:var(--hover);border-color:var(--hover);color:var(--hoverfg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--fg)}
+.btn.ghost:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.sm{padding:10px 18px;font-size:12px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.arrow{display:inline-block;width:22px;height:1px;background:currentColor;position:relative;transition:width .3s var(--ease)}
+.arrow::after{content:"";position:absolute;right:0;top:-3px;width:7px;height:7px;border-top:1px solid currentColor;border-right:1px solid currentColor;transform:rotate(45deg)}
+.btn:hover .arrow{width:32px}
+.tlink{background:none;border:0;padding:0;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:4px}
+.tlink:hover{color:var(--fg)}
+
+/* cursor / spotlight */
+.spot{position:fixed;left:0;top:0;width:var(--spot-size);height:var(--spot-size);margin:calc(var(--spot-size)/-2) 0 0 calc(var(--spot-size)/-2);border-radius:50%;background:var(--spot-bg);border:var(--spot-bd);mix-blend-mode:var(--spot-blend);pointer-events:none;z-index:40;opacity:0;transition:opacity .4s,width .4s,height .4s,margin .4s;will-change:transform}
+.spot.on{opacity:1}
+.progress{position:fixed;left:0;top:0;height:2px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--gold);z-index:60}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;margin-inline:calc(clamp(16px,4vw,52px)*-1);padding:14px clamp(16px,4vw,52px);display:flex;align-items:center;gap:20px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);transition:transform .5s var(--ease),background .5s}
+.nav.hide{transform:translateY(-110%)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;margin-right:auto}
+.mono{width:40px;height:40px;border:1.5px solid var(--fg);border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:calc(17px*var(--hs));letter-spacing:.02em}
+.bn{display:flex;flex-direction:column;line-height:1.05;font-size:11px;letter-spacing:.34em;text-transform:uppercase;font-weight:700}
+.bn small{font-family:var(--display);font-style:italic;font-size:calc(13px*var(--hs));letter-spacing:.04em;text-transform:none;color:var(--gold);font-weight:400;margin-top:3px}
+.links{display:flex;gap:28px;font-size:13px;letter-spacing:.04em}
+.links a{text-decoration:none;position:relative;padding-block:4px}
+.links a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--gold);transform:scaleX(0);transform-origin:0 50%;transition:transform .4s var(--ease)}
+.links a:hover::after{transform:scaleX(1)}
+.tools{display:flex;align-items:center;gap:10px}
+.theme,.bagbtn,.menu{background:transparent;border:1px solid var(--line);border-radius:var(--rb);padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;display:flex;align-items:center;gap:8px;transition:border-color .3s}
+.theme:hover,.bagbtn:hover,.menu:hover{border-color:var(--fg)}
+.orb{width:14px;height:14px;border:1.5px solid currentColor;border-radius:50%;background:linear-gradient(90deg,currentColor 50%,transparent 50%);transition:transform .6s var(--ease)}
+.theme[aria-pressed="true"] .orb{transform:rotate(180deg)}
+.bagbtn b{font-weight:700;min-width:1.2em;text-align:center;background:var(--accent);color:var(--accentfg);border-radius:99px;padding:0 6px;font-size:11px}
+.bagbtn.bump b{animation:bump .5s var(--ease)}
+@keyframes bump{40%{transform:scale(1.5)}}
+.menu{display:none}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;padding-block:clamp(36px,6vw,80px) clamp(48px,7vw,96px)}
+.hero-copy{display:flex;flex-direction:column;gap:26px}
+.hero h1{font-size:calc(clamp(46px,8vw,104px)*var(--hs));line-height:.96;letter-spacing:-.02em}
+.ln{display:block;overflow:hidden;padding-bottom:.08em}
+.ln>span{display:block;animation:rise 1.2s var(--ease) both}
+.ln:nth-child(2)>span{animation-delay:.12s}
+.ln:nth-child(3)>span{animation-delay:.24s}
+@keyframes rise{from{transform:translateY(105%)}to{transform:none}}
+.hero p.lead{font-size:17px;color:var(--muted);max-width:46ch}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.nextslot{display:flex;align-items:center;gap:14px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.nextslot b{color:var(--fg);font-weight:600}
+.pulse{width:9px;height:9px;border-radius:50%;background:var(--gold);position:relative;flex:none}
+.pulse::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--gold);animation:ping 2.4s ease-out infinite}
+@keyframes ping{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
+.hero-art{position:relative;aspect-ratio:1/1;width:100%;max-width:620px;justify-self:center;display:grid;place-items:center}
+.ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring ellipse{fill:none;stroke:var(--fg);stroke-linecap:round;stroke-dasharray:1900;stroke-dashoffset:1900;animation:draw 2.6s var(--ease) .3s forwards}
+.ring ellipse.b{stroke:var(--gold);animation-delay:.6s;animation-duration:2.9s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.hero-set{position:relative;width:78%;filter:drop-shadow(0 26px 24px rgba(0,0,0,.22));animation:floaty 7s ease-in-out infinite;transition:transform .3s}
+@keyframes floaty{50%{translate:0 -10px}}
+.chip{position:absolute;background:var(--panel);border:1px solid var(--line);padding:9px 14px;font-size:12px;letter-spacing:.04em;border-radius:var(--rb);box-shadow:var(--shadow);animation:floaty 8s ease-in-out infinite}
+.chip.c1{left:-2%;top:16%}
+.chip.c2{right:0;bottom:12%;animation-delay:-3s}
+
+/* marquee */
+.marq{margin-inline:calc(clamp(16px,4vw,52px)*-1);border-block:1px solid var(--line);overflow:hidden;padding-block:18px;background:var(--bg2);transition:background .5s}
+.marq-in{display:flex;width:max-content;animation:marq 38s linear infinite}
+.marq span{font-family:var(--display);font-size:calc(26px*var(--hs));font-style:italic;white-space:nowrap;padding-inline:26px;display:flex;align-items:center;gap:52px}
+.marq span::after{content:"";width:8px;height:8px;background:var(--gold);transform:rotate(45deg)}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* shop */
+.filters{display:flex;flex-direction:column;gap:12px}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.frow .k{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);width:76px;font-weight:700}
+.fb{background:transparent;border:1px solid var(--line);border-radius:var(--rb);padding:7px 16px;font-size:13px;transition:background .3s,color .3s,border-color .3s}
+.fb:hover{border-color:var(--fg)}
+.fb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:clamp(16px,2vw,28px)}
+.card{display:flex;flex-direction:column;gap:14px;min-width:0;cursor:pointer;text-align:left;background:none;border:0;padding:0}
+.card .pic{position:relative;aspect-ratio:5/4.4;background:radial-gradient(circle at 50% 38%,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);display:grid;place-items:center;overflow:hidden;transition:border-color .4s,box-shadow .4s}
+.card:hover .pic{border-color:var(--gold);box-shadow:var(--shadow)}
+.card .pic svg{width:84%;transition:transform .6s var(--ease);transform:translate(calc(var(--mx,0)*10px),calc(var(--my,0)*8px))}
+.card:hover .pic svg{transform:translate(calc(var(--mx,0)*10px),calc(var(--my,0)*8px)) scale(1.05)}
+.card .tg{position:absolute;left:12px;top:12px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.card .quick{position:absolute;left:12px;right:12px;bottom:12px;transform:translateY(130%);transition:transform .5s var(--ease)}
+.card:hover .quick,.card:focus-visible .quick{transform:none}
+.card h3{font-size:calc(24px*var(--hs));line-height:1.1}
+.card .meta{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);align-items:baseline}
+.card .price{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.empty{padding:40px;border:1px dashed var(--line);text-align:center;color:var(--muted)}
+
+/* fit guide */
+.fit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:center;background:var(--bg2);margin-inline:calc(clamp(16px,4vw,52px)*-1);padding:clamp(48px,8vw,100px) clamp(16px,4vw,52px);transition:background .5s}
+.fit>*{min-width:0}
+.fit .l{max-width:560px;margin-left:auto;display:flex;flex-direction:column;gap:22px;width:100%}
+.fit .r{max-width:560px;display:flex;flex-direction:column;gap:16px;width:100%}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;border-top:1px solid var(--line);padding-top:20px}
+.steps3 div{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.steps3 b{font-family:var(--display);font-size:calc(20px*var(--hs));color:var(--fg);font-weight:400}
+.gauge{background:var(--panel);border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:20px}
+.gauge .rule{position:relative;height:120px;background:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 12px);border-bottom:1px solid var(--fg);display:flex;align-items:flex-end;justify-content:center}
+.gauge .nailw{background:var(--blush);border:1px solid var(--gold);border-radius:30px 30px 8px 8px;height:96px;transition:width .25s var(--ease);position:relative}
+.gauge .nailw::after{content:"";position:absolute;left:18%;top:12%;width:2px;height:55%;background:#fff;opacity:.5;border-radius:2px}
+.gauge output{font-family:var(--display);font-size:calc(46px*var(--hs));line-height:1}
+.gauge output small{font-family:var(--body);font-size:12px;color:var(--muted);letter-spacing:.08em;margin-left:10px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.sizeline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted)}
+
+/* booking */
+.book{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:clamp(20px,3vw,36px);transition:background .5s}
+.stepper{display:flex;gap:0;margin-bottom:26px;border-bottom:1px solid var(--line)}
+.stepper button{flex:1;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 4px 14px;text-align:left;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;flex-direction:column;gap:2px}
+.stepper button i{font-style:normal;font-family:var(--display);font-size:calc(22px*var(--hs));letter-spacing:0;color:var(--muted);text-transform:none;font-weight:400}
+.stepper button[aria-current="step"]{color:var(--fg);border-color:var(--gold)}
+.stepper button[aria-current="step"] i{color:var(--gold)}
+.stepper button[disabled]{opacity:.45;cursor:default}
+.bp{display:flex;flex-direction:column;gap:20px}
+.bp h3{font-size:calc(30px*var(--hs))}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.field input,.field textarea,.field select{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 2px;font:inherit;color:var(--fg);transition:border-color .3s}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--gold)}
+.field select option{background:var(--panel);color:var(--fg)}
+.field .err{color:var(--err);font-size:12px;min-height:1.2em}
+.field.bad input,.field.bad textarea,.field.bad select{border-color:var(--err)}
+.frm2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.msg{font-size:13px;padding:12px 14px;border:1px solid var(--line);background:var(--bg2);display:none}
+.msg.show{display:block}
+.msg.ok{border-color:var(--ok)}
+.msg.no{border-color:var(--err)}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border:1px solid var(--line);padding:14px 16px;cursor:pointer;border-radius:var(--r);transition:border-color .3s,background .3s}
+.opt:hover{border-color:var(--fg)}
+.opt:has(input:checked){border-color:var(--gold);background:var(--bg2)}
+.opt input{appearance:none;width:18px;height:18px;border:1.5px solid var(--muted);border-radius:50%;display:grid;place-items:center;margin:0;transition:border-color .2s}
+.opt input[type=checkbox]{border-radius:3px}
+.opt input::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold);transform:scale(0);transition:transform .25s var(--ease)}
+.opt input[type=checkbox]::after{border-radius:1px}
+.opt input:checked{border-color:var(--gold)}
+.opt input:checked::after{transform:scale(1)}
+.opt .t{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.opt .t b{font-weight:600}
+.opt .t span{font-size:12px;color:var(--muted)}
+.opt .pr{font-variant-numeric:tabular-nums;font-weight:600}
+.nav2{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:20px}
+.cal-h{display:flex;justify-content:space-between;align-items:center}
+.cal-h h4{font-size:calc(24px*var(--hs))}
+.cal-h div{display:flex;gap:6px}
+.sq{width:36px;height:36px;border:1px solid var(--line);background:transparent;border-radius:50%;font-size:14px}
+.sq:hover:not([disabled]){border-color:var(--fg)}
+.sq[disabled]{opacity:.3;cursor:not-allowed}
+.dow,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow span{text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.day{aspect-ratio:1;min-width:0;background:transparent;border:1px solid var(--line);border-radius:var(--r);font-size:13px;position:relative;font-variant-numeric:tabular-nums;transition:background .25s,border-color .25s}
+.day:hover:not([disabled]){border-color:var(--fg)}
+.day[disabled]{opacity:.28;cursor:not-allowed;background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line) 5px 6px)}
+.day.few::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--gold)}
+.day.today{border-color:var(--gold)}
+.day[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.day.blank{border:0;pointer-events:none;background:none}
+.slots{display:flex;gap:8px;flex-wrap:wrap}
+.slot{border:1px solid var(--line);background:transparent;border-radius:var(--rb);padding:9px 18px;font-size:13px;font-variant-numeric:tabular-nums}
+.slot:hover:not([disabled]){border-color:var(--fg)}
+.slot[disabled]{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.slot[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accentfg)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-right:6px;vertical-align:middle}
+.sum{position:sticky;top:90px;display:flex;flex-direction:column;gap:14px}
+.sum h4{font-size:calc(26px*var(--hs))}
+.sum dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px}
+.sum dt{color:var(--muted)}
+.sum dd{margin:0;text-align:right;font-weight:500}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:14px}
+.total b{font-family:var(--display);font-size:calc(34px*var(--hs));font-weight:400;font-variant-numeric:tabular-nums}
+.done{display:none;flex-direction:column;gap:14px;align-items:flex-start}
+.done.show{display:flex}
+.ref{font-family:var(--display);font-size:calc(30px*var(--hs));color:var(--gold)}
+
+/* stories */
+.reel{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:18px;margin-inline:calc(clamp(16px,4vw,52px)*-1);padding-inline:clamp(16px,4vw,52px);scrollbar-width:thin;scrollbar-color:var(--gold) transparent}
+.vid{flex:0 0 clamp(210px,24vw,270px);scroll-snap-align:start;aspect-ratio:9/16;position:relative;border:0;padding:0;border-radius:var(--r);overflow:hidden;text-align:left;background:var(--bg2);color:#fff}
+.vid .poster{position:absolute;inset:0;display:grid;place-items:center;transition:transform .8s var(--ease)}
+.vid:hover .poster{transform:scale(1.06)}
+.vid .poster svg{width:96%;margin-top:-10%;filter:drop-shadow(0 14px 14px rgba(0,0,0,.3))}
+.vid::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 28%,transparent 52%,rgba(0,0,0,.78))}
+.vid .cap{position:absolute;left:16px;right:16px;bottom:16px;z-index:2;display:flex;flex-direction:column;gap:2px}
+.vid .cap b{font-family:var(--display);font-size:calc(24px*var(--hs));font-weight:400;line-height:1.05}
+.vid .cap span{font-size:12px;opacity:.85}
+.vid .smp{position:absolute;left:14px;top:14px;z-index:2;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;border:1px solid rgba(255,255,255,.7);padding:3px 8px;border-radius:99px}
+.vid .play{position:absolute;right:14px;top:14px;z-index:2;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.85);display:grid;place-items:center;backdrop-filter:blur(6px);transition:background .3s}
+.vid:hover .play{background:rgba(255,255,255,.25)}
+.vid .play::before{content:"";border-left:11px solid #fff;border-block:7px solid transparent;margin-left:3px}
+.ba{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center}
+.ba-box{position:relative;aspect-ratio:4/3.3;border:1px solid var(--line);background:radial-gradient(circle at 50% 40%,var(--panel),var(--bg2));overflow:hidden;touch-action:pan-y;user-select:none}
+.ba-box svg{position:absolute;inset:6% 4%;width:92%;height:88%}
+.ba-box .before{clip-path:inset(0 calc(100% - var(--p,50%)) 0 0);background:var(--bg2);inset:0;width:100%;height:100%;padding:6% 4%}
+.ba-box .before svg{position:static;width:100%;height:100%}
+.ba-box .handle{position:absolute;top:0;bottom:0;left:var(--p,50%);width:2px;background:var(--gold);pointer-events:none}
+.ba-box .handle::after{content:"";position:absolute;top:50%;left:50%;width:34px;height:34px;margin:-17px;border-radius:50%;background:var(--bg);border:2px solid var(--gold)}
+.ba-box input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.ba-box .lab{position:absolute;bottom:12px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;background:var(--bg);padding:4px 10px;border-radius:99px;z-index:2}
+.ba-box .lab.a{left:12px}.ba-box .lab.b{right:12px}
+
+/* promises + faq */
+.prom{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0;border-top:1px solid var(--line)}
+.prom div{padding:28px 24px 28px 0;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+.prom h3{font-size:calc(26px*var(--hs))}
+.prom p{color:var(--muted);font-size:14px}
+.prom .dot{width:10px;height:10px;border:1px solid var(--gold);transform:rotate(45deg);margin-bottom:6px}
+.faq{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:clamp(24px,5vw,80px)}
+details{border-bottom:1px solid var(--line)}
+details:first-child{border-top:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:20px;align-items:center;padding:20px 0;font-family:var(--display);font-size:calc(22px*var(--hs))}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";flex:none;width:14px;height:14px;background:linear-gradient(var(--gold),var(--gold)) center/100% 1px no-repeat,linear-gradient(var(--gold),var(--gold)) center/1px 100% no-repeat;transition:transform .4s var(--ease)}
+details[open] summary::after{transform:rotate(45deg)}
+details p{padding:0 0 22px;color:var(--muted);max-width:60ch}
+
+footer{margin-inline:calc(clamp(16px,4vw,52px)*-1);padding:clamp(48px,7vw,88px) clamp(16px,4vw,52px) 36px;border-top:1px solid var(--line);background:var(--bg2);transition:background .5s}
+.foot{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:32px}
+.foot h4{font-family:var(--body);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px}
+.foot ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:14px;color:var(--muted)}
+.foot .big{font-family:var(--display);font-size:calc(34px*var(--hs));line-height:1.05;max-width:14ch}
+.legal{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* overlays */
+.scrim{position:fixed;inset:0;background:rgba(10,6,8,.55);backdrop-filter:blur(3px);z-index:70;opacity:0;pointer-events:none;transition:opacity .4s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:80;transform:translateX(102%);transition:transform .6s var(--ease),background .5s;display:flex;flex-direction:column;border-left:1px solid var(--line);visibility:hidden}
+.drawer.on{transform:none;visibility:visible}
+.drawer>header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+.drawer>header h3{font-size:calc(26px*var(--hs))}
+.drawer .body{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:22px}
+.drawer .foot2{padding:18px 24px calc(18px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.x{background:transparent;border:1px solid var(--line);border-radius:50%;width:38px;height:38px;position:relative;flex:none}
+.x::before,.x::after{content:"";position:absolute;left:10px;right:10px;top:50%;height:1px;background:currentColor;transform:rotate(45deg)}
+.x::after{transform:rotate(-45deg)}
+.x:hover{border-color:var(--fg)}
+.pd-pic{aspect-ratio:5/4;background:radial-gradient(circle at 50% 40%,var(--panel),var(--bg2));border:1px solid var(--line);display:grid;place-items:center}
+.pd-pic svg{width:86%}
+.pd h2{font-size:calc(40px*var(--hs));line-height:1}
+.pd .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.pd .price{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.pd ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.pd li{padding-left:18px;position:relative}
+.pd li::before{content:"";position:absolute;left:0;top:.7em;width:9px;height:1px;background:var(--gold)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:var(--rb)}
+.qty button{width:36px;height:36px;background:none;border:0;font-size:16px}
+.qty span{min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
+.pin{display:flex;gap:10px;align-items:end}
+.pin .field{flex:1}
+.line{display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.line .th{aspect-ratio:1;background:var(--bg2);border:1px solid var(--line);display:grid;place-items:center}
+.line .th svg{width:92%}
+.line h4{font-size:calc(20px*var(--hs))}
+.line small{display:block;color:var(--muted);font-size:12px}
+.line .rt{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font-variant-numeric:tabular-nums}
+.freebar{height:3px;background:var(--line);position:relative;margin-top:8px}
+.freebar i{position:absolute;left:0;top:0;bottom:0;background:var(--gold);transition:width .6s var(--ease)}
+.rows{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.rows div{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.rows div.t{border-top:1px solid var(--line);padding-top:10px;margin-top:4px;font-size:17px;font-weight:600}
+.empty-bag{display:flex;flex-direction:column;gap:16px;align-items:flex-start;color:var(--muted)}
+
+.checkout{position:fixed;inset:0;z-index:90;background:var(--bg);overflow-y:auto;transform:translateY(102%);transition:transform .7s var(--ease);visibility:hidden;padding-inline:clamp(16px,4vw,52px)}
+.checkout.on{transform:none;visibility:visible}
+.co-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:18px;border-bottom:1px solid var(--line);max-width:1240px;margin-inline:auto}
+.secure{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ok)}
+.lock{width:12px;height:9px;border:1.5px solid currentColor;border-radius:2px;position:relative;margin-top:6px}
+.lock::before{content:"";position:absolute;left:1px;top:-8px;width:6px;height:7px;border:1.5px solid currentColor;border-bottom:0;border-radius:6px 6px 0 0}
+.co{max-width:1240px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);padding-block:36px 80px;align-items:start}
+.co h2{font-size:calc(40px*var(--hs));margin-bottom:22px}
+.co-step{display:flex;flex-direction:column;gap:20px;padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
+.co-step h3{font-size:calc(26px*var(--hs));display:flex;gap:14px;align-items:baseline}
+.co-step h3 i{font-style:normal;color:var(--gold);font-size:calc(22px*var(--hs))}
+.co-step.dim{opacity:.4;pointer-events:none}
+.demo{font-size:12px;border:1px dashed var(--gold);padding:10px 14px;color:var(--muted)}
+.track{display:flex;flex-direction:column;gap:0;margin:8px 0}
+.track div{display:grid;grid-template-columns:20px 1fr;gap:14px;position:relative;padding-bottom:20px;font-size:14px}
+.track div::before{content:"";position:absolute;left:4px;top:14px;bottom:0;width:1px;background:var(--line)}
+.track div:last-child::before{display:none}
+.track i{width:9px;height:9px;border-radius:50%;border:1px solid var(--gold);margin-top:6px}
+.track div.now i{background:var(--gold)}
+.track small{display:block;color:var(--muted)}
+
+.lightbox{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:rgba(8,4,6,.92);padding:20px}
+.lightbox.on{display:grid}
+.lb{position:relative;height:min(86vh,760px);aspect-ratio:9/16;max-width:100%;overflow:hidden;border-radius:var(--r);color:#fff;display:grid;place-items:center}
+.lb .poster{position:absolute;inset:0;display:grid;place-items:center;animation:slowzoom 14s linear forwards}
+@keyframes slowzoom{to{transform:scale(1.12)}}
+.lb .poster svg{width:96%;margin-top:-14%}
+.lb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),transparent 25%,transparent 45%,rgba(0,0,0,.82));pointer-events:none}
+.lb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:3}
+.lb .tx{position:absolute;left:20px;right:20px;bottom:56px;z-index:2;font-family:var(--display);font-size:calc(26px*var(--hs));line-height:1.15;min-height:3.6em}
+.lb .who{position:absolute;left:20px;bottom:22px;z-index:2;font-size:12px;letter-spacing:.08em}
+.lb .bar{position:absolute;left:0;right:0;top:0;height:3px;background:rgba(255,255,255,.25);z-index:4}
+.lb .bar i{display:block;height:100%;width:0;background:#fff}
+.lb .bar i.go{animation:prog 14s linear forwards}
+@keyframes prog{to{width:100%}}
+.lb .x{position:absolute;right:12px;top:14px;z-index:5;color:#fff;border-color:rgba(255,255,255,.6)}
+.lb .smp2{position:absolute;left:20px;top:26px;z-index:2;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;border:1px solid rgba(255,255,255,.7);padding:3px 8px;border-radius:99px}
+
+.menuov{position:fixed;inset:0;z-index:85;background:var(--bg);display:none;flex-direction:column;padding:24px clamp(16px,4vw,52px);gap:6px}
+.menuov.on{display:flex}
+.menuov a{font-family:var(--display);font-size:calc(44px*var(--hs));text-decoration:none;padding-block:6px;border-bottom:1px solid var(--line)}
+.menuov .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);background:var(--fg);color:var(--bg);padding:12px 22px;border-radius:var(--rb);font-size:13px;z-index:120;transition:transform .5s var(--ease);max-width:calc(100% - 32px)}
+.toast.on{transform:translate(-50%,0)}
+.mbar{display:none}
+
+@media (max-width:960px){
+  .links,.tools .btn{display:none}
+  .menu{display:flex}
+  .hero{grid-template-columns:1fr}
+  .hero-art{max-width:460px}
+  .fit,.book,.ba,.faq,.co{grid-template-columns:1fr}
+  .fit .l,.fit .r{margin:0;max-width:none}
+  .sum{position:static}
+  .foot{grid-template-columns:1fr 1fr}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  .mbar .btn{flex:1}
+  body{padding-bottom:70px}
+}
+@media (max-width:560px){
+  .frm2{grid-template-columns:1fr}
+  .steps3{grid-template-columns:1fr}
+  .stepper button{font-size:10px;letter-spacing:.08em}
+  .frow .k{width:100%}
+  .foot{grid-template-columns:1fr}
+  .theme .tl{display:none}
+  .bn small{display:none}
+  .day{font-size:12px}
+}
+@media (hover:none),(pointer:coarse){.spot{display:none}}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+  .marq-in{animation:none}
+  .rv{transform:none}
+}
+</style>
+
+<div class="spot" id="spot" aria-hidden="true"></div>
+<div class="progress" id="prog" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top" data-go="top" aria-label="Happy Nails by Anamika, home">
+    <span class="mono">HN</span>
+    <span class="bn">Happy Nails<small>by Anamika</small></span>
+  </a>
+  <nav class="links" aria-label="Main">
+    <a href="#shop" data-go="shop">Collection</a>
+    <a href="#fit" data-go="fit">Find your size</a>
+    <a href="#book" data-go="book">Home visits</a>
+    <a href="#stories" data-go="stories">Stories</a>
+    <a href="#faq" data-go="faq">Questions</a>
+  </nav>
+  <div class="tools">
+    <button class="theme" id="theme" type="button" aria-pressed="false" aria-label="Switch between light and dark theme"><span class="orb"></span><span class="tl">Dark</span></button>
+    <button class="bagbtn" id="bagbtn" type="button">Bag <b id="bagn">0</b></button>
+    <a class="btn sm mag" href="#book" data-go="book">Book a visit</a>
+    <button class="menu" id="menubtn" type="button">Menu</button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="hero" aria-label="Welcome">
+    <div class="hero-copy">
+      <p class="eyebrow">Press-on extensions &nbsp;/&nbsp; Home visits in Delhi NCR</p>
+      <h1><span class="ln"><span>Salon nails,</span></span><span class="ln"><span><em>wherever</em></span></span><span class="ln"><span>you are.</span></span></h1>
+      <p class="lead">Hand-finished sets delivered across India. Or book Anamika's team to do them at your home in Delhi, Noida or Gurgaon.</p>
+      <div class="cta">
+        <a class="btn mag" href="#shop" data-go="shop">Shop the collection <span class="arrow"></span></a>
+        <a class="btn ghost mag" href="#book" data-go="book">Book a home visit</a>
+      </div>
+      <div class="nextslot"><span class="pulse"></span><span id="nextslot">Checking the calendar</span></div>
+    </div>
+    <div class="hero-art" id="heroArt">
+      <svg class="ring" viewBox="0 0 600 600" aria-hidden="true">
+        <ellipse cx="300" cy="300" rx="286" ry="280" stroke-width="5" transform="rotate(-24 300 300)"/>
+        <ellipse class="b" cx="300" cy="304" rx="276" ry="288" stroke-width="1.6" transform="rotate(8 300 300)"/>
+      </svg>
+      <div class="hero-set" id="heroSet"></div>
+      <span class="chip c1">Delhi &middot; Noida &middot; Gurgaon</span>
+      <span class="chip c2">Delivery across India</span>
+    </div>
+  </section>
+
+  <div class="marq" aria-hidden="true"><div class="marq-in" id="marq"></div></div>
+
+  <section class="sec" id="shop" aria-labelledby="shopH">
+    <div class="sec-head rv">
+      <div><p class="eyebrow">The collection</p><h2 class="h2" id="shopH">Sets made to be <em>worn</em>, then kept.</h2></div>
+      <p class="sub">Each set ships with a prep kit and adhesive tabs. Choose a shape, pick an occasion, then size it in the drawer.</p>
+    </div>
+    <div class="filters rv">
+      <div class="frow" id="fShape"><span class="k">Shape</span></div>
+      <div class="frow" id="fOcc"><span class="k">Occasion</span></div>
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+  </section>
+
+  <section class="fit" id="fit" aria-labelledby="fitH">
+    <div class="l rv">
+      <p class="eyebrow">Find your size</p>
+      <h2 class="h2" id="fitH">Measure once. <em>Order with confidence.</em></h2>
+      <p style="color:var(--muted);max-width:46ch">Press your thumbnail against a ruler, read the width at the widest point, and slide to match. We suggest the closest size for the thumb. The other fingers follow from there.</p>
+      <div class="steps3">
+        <div><b>Choose</b>Pick a shape and finish you love.</div>
+        <div><b>Fit</b>Match sizes from the kit to each nail.</div>
+        <div><b>Press</b>Prep, press, hold for thirty seconds.</div>
+      </div>
+    </div>
+    <div class="r rv">
+      <div class="gauge">
+        <div class="rule" aria-hidden="true"><div class="nailw" id="nailw"></div></div>
+        <div class="sizeline"><output id="sizeOut" for="mm">Size 5<small>13.0 mm</small></output><span class="note">Thumb width, in millimetres</span></div>
+        <input type="range" id="mm" min="9" max="18" step="0.5" value="13" aria-label="Thumb nail width in millimetres">
+        <p class="note" id="sizeNote">Each kit holds twelve sizes, so a size either side still fits.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="book" aria-labelledby="bookH">
+    <div class="sec-head rv">
+      <div><p class="eyebrow">At your door</p><h2 class="h2" id="bookH">Book a <em>home visit</em></h2></div>
+      <p class="sub">Four short steps. Open slots are shown for every day of the month, for your city.</p>
+    </div>
+    <div class="book rv">
+      <div class="panel" id="bpanel">
+        <div class="stepper" id="stepper" role="tablist" aria-label="Booking steps">
+          <button type="button" data-s="0"><i>1</i>Where</button>
+          <button type="button" data-s="1"><i>2</i>Service</button>
+          <button type="button" data-s="2"><i>3</i>Day and time</button>
+          <button type="button" data-s="3"><i>4</i>Your details</button>
+        </div>
+
+        <div class="bp" data-p="0">
+          <h3>Where should we come?</h3>
+          <div class="seg" id="bCity" role="group" aria-label="City"></div>
+          <div class="field" id="fPin"><label for="pin">Pincode</label><input id="pin" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="e.g. 110017"><div class="err" aria-live="polite"></div></div>
+          <div class="msg" id="pinMsg" role="status"></div>
+          <div class="nav2"><span class="note">Visits cover Delhi, Noida and Gurgaon only.</span><button class="btn" type="button" data-next>Choose a service <span class="arrow"></span></button></div>
+        </div>
+
+        <div class="bp" data-p="1" hidden>
+          <h3>What would you like?</h3>
+          <div class="opts" id="svcList" role="radiogroup" aria-label="Service"></div>
+          <div class="lbl">Add-ons</div>
+          <div class="opts" id="addList"></div>
+          <div class="nav2"><button class="btn ghost" type="button" data-back>Back</button><button class="btn" type="button" data-next>Pick a day <span class="arrow"></span></button></div>
+        </div>
+
+        <div class="bp" data-p="2" hidden>
+          <h3>Pick a day and time</h3>
+          <div class="cal-h"><h4 id="calTitle"></h4><div><button class="sq" id="calPrev" type="button" aria-label="Previous month">&larr;</button><button class="sq" id="calNext" type="button" aria-label="Next month">&rarr;</button></div></div>
+          <div class="dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="days" id="days"></div>
+          <div class="legend"><span><i></i>Few slots left</span><span>Struck out: fully booked or too soon</span></div>
+          <div class="lbl" id="slotLbl">Times</div>
+          <div class="slots" id="slots" aria-live="polite"></div>
+          <div class="nav2"><button class="btn ghost" type="button" data-back>Back</button><button class="btn" type="button" data-next>Your details <span class="arrow"></span></button></div>
+        </div>
+
+        <div class="bp" data-p="3" hidden>
+          <h3>Who are we meeting?</h3>
+          <div class="frm2">
+            <div class="field"><label for="bn">Name</label><input id="bn" autocomplete="name"><div class="err"></div></div>
+            <div class="field"><label for="bph">Mobile number</label><input id="bph" inputmode="tel" maxlength="10" autocomplete="tel-national" placeholder="10 digits"><div class="err"></div></div>
+          </div>
+          <div class="field"><label for="bad">Address for the visit</label><textarea id="bad" rows="2" autocomplete="street-address"></textarea><div class="err"></div></div>
+          <div class="field"><label for="bno">Notes, if any</label><input id="bno" placeholder="Reference photo, allergies, parking"><div class="err"></div></div>
+          <div class="demo">Demo booking. Nothing is sent or stored. On the live site this step confirms on WhatsApp.</div>
+          <div class="nav2"><button class="btn ghost" type="button" data-back>Back</button><button class="btn" type="button" id="confirmBook">Confirm booking</button></div>
+        </div>
+
+        <div class="done" id="bdone" tabindex="-1">
+          <p class="eyebrow">Booking confirmed (demo)</p>
+          <h3 style="font-size:calc(36px*var(--hs))">See you soon, <span id="dn"></span>.</h3>
+          <div class="ref" id="dref"></div>
+          <p style="color:var(--muted)" id="dtxt"></p>
+          <button class="btn ghost" type="button" id="bagain">Book another visit</button>
+        </div>
+      </div>
+
+      <aside class="panel sum" aria-label="Booking summary">
+        <h4>Your visit</h4>
+        <dl id="bsum"></dl>
+        <div class="total"><span class="lbl">Total</span><b id="btot">&#8377;0</b></div>
+        <p class="note">Pay after your visit by UPI or cash. Travel is included within Delhi NCR.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="sec" id="stories" aria-labelledby="stH">
+    <div class="sec-head rv">
+      <div><p class="eyebrow">Stories</p><h2 class="h2" id="stH">Hear it from <em>her hands</em></h2></div>
+      <p class="sub">Short videos from clients, straight from the phone. These tiles are samples until real clips are added.</p>
+    </div>
+    <div class="reel rv" id="reel" tabindex="0" aria-label="Video stories, scroll sideways"></div>
+    <div class="ba rv">
+      <div class="ba-box" id="baBox" style="--p:50%">
+        <svg viewBox="0 0 320 240" aria-hidden="true" id="baAfter"></svg>
+        <div class="before" id="baBefore"></div>
+        <div class="handle"></div>
+        <span class="lab a">Before</span><span class="lab b">After</span>
+        <input type="range" min="2" max="98" value="50" id="baRange" aria-label="Drag to compare before and after">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px;max-width:46ch">
+        <p class="eyebrow">Before and after</p>
+        <h2 class="h2">Short, uneven, <em>done.</em></h2>
+        <p style="color:var(--muted)">Drag the line. A full set is built, shaped and finished in about two hours at your home, and the set name goes on every photo so you can ask for it again.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="prH">
+    <div class="sec-head rv"><div><p class="eyebrow">Our promises</p><h2 class="h2" id="prH">Small details that <em>earn trust</em></h2></div></div>
+    <div class="prom rv">
+      <div><span class="dot"></span><h3>Clean tools, every visit</h3><p>Metal tools are sterilised between clients. Files and buffers are single use and opened in front of you.</p></div>
+      <div><span class="dot"></span><h3>Fit or we fix it</h3><p>If a set does not fit, send us your measurements within seven days and we re-size it free.</p></div>
+      <div><span class="dot"></span><h3>Tracked, packed with care</h3><p>Every order leaves with a tracking link and a rigid box so your set arrives unbent.</p></div>
+      <div><span class="dot"></span><h3>Named technicians</h3><p>You see who is coming, with a photo, before they ring the bell.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="fqH">
+    <div class="faq rv">
+      <div style="display:flex;flex-direction:column;gap:14px"><p class="eyebrow">Questions</p><h2 class="h2" id="fqH">Before you <em>order</em></h2><p style="color:var(--muted);max-width:34ch">Cannot find your answer? Message us on WhatsApp and a real person replies.</p></div>
+      <div>
+        <details open><summary>How long do press-on sets last?</summary><p>With adhesive tabs, a few days to a week. With nail glue and proper prep, two to three weeks is common. Care and nail growth change this.</p></details>
+        <details><summary>Where do you deliver?</summary><p>Everywhere in India. Delhi NCR orders usually arrive in one to two days, other cities in three to six.</p></details>
+        <details><summary>Can I reuse a set?</summary><p>Yes. Soak off the adhesive, clean the nails with alcohol, and press again with fresh tabs.</p></details>
+        <details><summary>Which areas do home visits cover?</summary><p>Delhi, Noida and Gurgaon. Enter your pincode in the booking steps and we check it right away.</p></details>
+        <details><summary>What if I need to cancel a visit?</summary><p>Free up to 24 hours before your slot. After that, message us and we will find another time.</p></details>
+        <details><summary>How do I pay?</summary><p>Online orders use a secure payment page for UPI, cards and netbanking, plus cash on delivery. Home visits are paid after the service.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div><p class="big">Happy hands, <em>happy days.</em></p></div>
+      <div><h4>Shop</h4><ul><li><a href="#shop" data-go="shop">Collection</a></li><li><a href="#fit" data-go="fit">Find your size</a></li><li><a href="#faq" data-go="faq">Shipping</a></li></ul></div>
+      <div><h4>Visit</h4><ul><li>Delhi</li><li>Noida</li><li>Gurgaon</li></ul></div>
+      <div><h4>Talk to us</h4><ul><li>WhatsApp +91 00000 00000</li><li>Instagram @happynails</li></ul></div>
+    </div>
+    <div class="legal"><span>Happy Nails by Anamika. Draft site: prices, stories and contact details are placeholders.</span><button class="tlink" type="button" id="themeF">Switch theme</button></div>
+  </div>
+</footer>
+
+<div class="mbar"><button class="btn ghost" type="button" data-open="bag">Bag</button><a class="btn" href="#book" data-go="book">Book a visit</a></div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="pdraw" role="dialog" aria-modal="true" aria-label="Product details" tabindex="-1"><header><h3>The set</h3><button class="x" type="button" data-close aria-label="Close"></button></header><div class="body pd" id="pbody"></div><div class="foot2" id="pfoot"></div></aside>
+<aside class="drawer" id="bag" role="dialog" aria-modal="true" aria-label="Your bag" tabindex="-1"><header><h3>Your bag</h3><button class="x" type="button" data-close aria-label="Close"></button></header><div class="body" id="bagBody"></div><div class="foot2" id="bagFoot"></div></aside>
+
+<div class="checkout" id="checkout" role="dialog" aria-modal="true" aria-label="Checkout" tabindex="-1">
+  <div class="co-top"><a class="brand" href="#top" aria-label="Happy Nails"><span class="mono">HN</span><span class="bn">Happy Nails</span></a><span class="secure"><span class="lock"></span>Secure checkout</span><button class="x" type="button" data-close aria-label="Close checkout"></button></div>
+  <div class="co" id="coMain">
+    <div>
+      <h2>Checkout</h2>
+      <div class="demo" style="margin-bottom:28px">Demo checkout. No payment is taken and no order is placed. The live site hands card, UPI and netbanking to the payment gateway's own hosted page, so card numbers never touch this site.</div>
+      <div class="co-step" id="co1">
+        <h3><i>1</i>Delivery details</h3>
+        <div class="frm2">
+          <div class="field"><label for="cn">Full name</label><input id="cn" autocomplete="name"><div class="err"></div></div>
+          <div class="field"><label for="cp">Mobile number</label><input id="cp" inputmode="tel" maxlength="10" autocomplete="tel-national"><div class="err"></div></div>
+        </div>
+        <div class="field"><label for="ce">Email for the receipt</label><input id="ce" type="email" autocomplete="email"><div class="err"></div></div>
+        <div class="field"><label for="ca">Address</label><textarea id="ca" rows="2" autocomplete="street-address"></textarea><div class="err"></div></div>
+        <div class="frm2">
+          <div class="field"><label for="cz">Pincode</label><input id="cz" inputmode="numeric" maxlength="6" autocomplete="postal-code"><div class="err"></div></div>
+          <div class="field"><label for="cc">City</label><input id="cc" autocomplete="address-level2"><div class="err"></div></div>
+        </div>
+        <div><button class="btn" type="button" id="co1n">Continue to delivery <span class="arrow"></span></button></div>
+      </div>
+      <div class="co-step dim" id="co2">
+        <h3><i>2</i>Delivery speed</h3>
+        <div class="opts" role="radiogroup" aria-label="Delivery speed">
+          <label class="opt"><input type="radio" name="ship" value="std" checked><span class="t"><b>Standard</b><span id="etaStd">3 to 6 days</span></span><span class="pr" id="prStd"></span></label>
+          <label class="opt"><input type="radio" name="ship" value="exp"><span class="t"><b>Express</b><span id="etaExp">1 to 3 days</span></span><span class="pr">&#8377;149</span></label>
+        </div>
+        <div><button class="btn" type="button" id="co2n">Continue to payment <span class="arrow"></span></button></div>
+      </div>
+      <div class="co-step dim" id="co3">
+        <h3><i>3</i>Payment</h3>
+        <div class="opts" role="radiogroup" aria-label="Payment method">
+          <label class="opt"><input type="radio" name="pay" value="upi" checked><span class="t"><b>UPI</b><span>Pay in your UPI app on the gateway page</span></span><span></span></label>
+          <label class="opt"><input type="radio" name="pay" value="card"><span class="t"><b>Card</b><span>Credit or debit, entered on the gateway's secure page</span></span><span></span></label>
+          <label class="opt"><input type="radio" name="pay" value="net"><span class="t"><b>Netbanking</b><span>Choose your bank on the gateway page</span></span><span></span></label>
+          <label class="opt"><input type="radio" name="pay" value="cod"><span class="t"><b>Cash on delivery</b><span>Pay the courier when it arrives</span></span><span class="pr">+&#8377;49</span></label>
+        </div>
+        <div><button class="btn" type="button" id="place">Place demo order</button></div>
+      </div>
+    </div>
+    <aside class="panel sum" aria-label="Order summary"><h4>Order summary</h4><div id="coItems" style="display:flex;flex-direction:column;gap:14px"></div><div class="rows" id="coRows"></div></aside>
+  </div>
+  <div class="co" id="coDone" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+      <p class="eyebrow">Order placed (demo)</p>
+      <h2 style="margin:0">Thank you, <span id="oname"></span>.</h2>
+      <div class="ref" id="oid"></div>
+      <p style="color:var(--muted);max-width:46ch" id="otx"></p>
+      <div class="track" id="otrack"></div>
+      <button class="btn ghost" type="button" data-close>Back to the site</button>
+    </div>
+    <aside class="panel sum"><h4>Paid with</h4><p id="opay" style="color:var(--muted)"></p><div class="rows" id="oRows"></div></aside>
+  </div>
+</div>
+
+<div class="lightbox" id="lbox" role="dialog" aria-modal="true" aria-label="Video story"><div class="lb" id="lb"></div></div>
+<div class="menuov" id="menuov"><div class="top"><span class="bn">Happy Nails</span><button class="x" type="button" data-close aria-label="Close menu"></button></div><a href="#shop" data-go="shop">Collection</a><a href="#fit" data-go="fit">Find your size</a><a href="#book" data-go="book">Home visits</a><a href="#stories" data-go="stories">Stories</a><a href="#faq" data-go="faq">Questions</a></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const root=document.documentElement,mq=matchMedia("(prefers-color-scheme: dark)");
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme ---------- */
+const effective=()=>root.getAttribute("data-theme")||(mq.matches?"dark":"light");
+function themeUI(){const d=effective()==="dark";$("#theme").setAttribute("aria-pressed",d);$("#theme .tl").textContent=d?"Light":"Dark"}
+try{const s=localStorage.getItem("hn-theme");if(s==="dark"||s==="light")root.setAttribute("data-theme",s)}catch(e){}
+function toggleTheme(){const n=effective()==="dark"?"light":"dark";root.setAttribute("data-theme",n);try{localStorage.setItem("hn-theme",n)}catch(e){}themeUI()}
+$("#theme").onclick=toggleTheme;$("#themeF").onclick=toggleTheme;mq.addEventListener?.("change",themeUI);themeUI();
+
+/* ---------- nail art ---------- */
+let uid=0;
+const hex=h=>{h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.substr(i,2),16))};
+const mix=(h,t,a)=>{const c=hex(h),d=hex(t);return"#"+c.map((v,i)=>Math.round(v+(d[i]-v)*a).toString(16).padStart(2,"0")).join("")};
+function shapePath(s,w,h){const a=w/2,b=h-w*.3;
+  switch(s){
+    case"square":return`M${-a},${b}L${-a},3Q${-a},0 ${-a+3},0L${a-3},0Q${a},0 ${a},3L${a},${b}Q${a},${h} 0,${h}Q${-a},${h} ${-a},${b}Z`;
+    case"oval":return`M${-a},${b}L${-a},${a}A${a},${a} 0 0 1 ${a},${a}L${a},${b}Q${a},${h} 0,${h}Q${-a},${h} ${-a},${b}Z`;
+    case"coffin":return`M${-a},${b}L${-a},${h*.5}L${-a*.58},0L${a*.58},0L${a},${h*.5}L${a},${b}Q${a},${h} 0,${h}Q${-a},${h} ${-a},${b}Z`;
+    case"stiletto":return`M${-a},${b}L${-a},${h*.55}Q${-a*.35},${h*.22} 0,0Q${a*.35},${h*.22} ${a},${h*.55}L${a},${b}Q${a},${h} 0,${h}Q${-a},${h} ${-a},${b}Z`;
+    default:return`M${-a},${b}L${-a},${h*.46}C${-a},${h*.2} ${-a*.3},0 0,0C${a*.3},0 ${a},${h*.2} ${a},${h*.46}L${a},${b}Q${a},${h} 0,${h}Q${-a},${h} ${-a},${b}Z`;
+  }}
+const F=[{x:50,y:176,r:-24,w:32,h:60},{x:112,y:146,r:-11,w:36,h:74},{x:172,y:132,r:0,w:38,h:82},{x:232,y:146,r:11,w:36,h:74},{x:288,y:190,r:34,w:44,h:64}];
+const LEN={almond:1,coffin:1.08,square:.9,oval:.94,stiletto:1.22};
+function nailSet(p,o={}){
+  const id="n"+(++uid),sc=o.scale||1,bare=!!o.bare;
+  let defs="",out="";
+  F.forEach((f,i)=>{
+    const L=(bare?.62:LEN[p.shape]||1)*sc,h=f.h*L,w=f.w,d=shapePath(bare?"square":p.shape,w,h),c=p.c,g=`${id}g${i}`,k=`${id}k${i}`;
+    let fill=c,extra="";
+    defs+=`<clipPath id="${k}"><path d="${d}"/></clipPath>`;
+    if(!bare){
+      if(p.fin==="ombre"){defs+=`<linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.c2}"/><stop offset="1" stop-color="${c}"/></linearGradient>`;fill=`url(#${g})`}
+      if(p.fin==="chrome"){defs+=`<linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mix(c,"#fff",.65)}"/><stop offset=".3" stop-color="${c}"/><stop offset=".6" stop-color="${mix(c,"#000",.4)}"/><stop offset=".8" stop-color="${mix(c,"#fff",.25)}"/><stop offset="1" stop-color="${mix(c,"#fff",.7)}"/></linearGradient>`;fill=`url(#${g})`}
+      if(p.fin==="cateye"){defs+=`<linearGradient id="${g}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${mix(c,"#000",.45)}"/><stop offset=".45" stop-color="${mix(c,"#fff",.5)}"/><stop offset=".6" stop-color="${c}"/><stop offset="1" stop-color="${mix(c,"#000",.5)}"/></linearGradient>`;fill=`url(#${g})`}
+      if(p.fin==="french")extra=`<path d="M${-w},0L${w},0L${w},${h*.3}Q0,${h*.16} ${-w},${h*.3}Z" fill="#FBF8F4" clip-path="url(#${k})"/>`;
+      if(p.fin==="glitter"){let s="";for(let j=0;j<26;j++){const rx=Math.sin((i*31+j)*12.9898)*43758.5453,ry=Math.sin((i*17+j)*78.233)*12543.31;const x=((rx-Math.floor(rx))-.5)*w,y=(ry-Math.floor(ry))*h;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(.8+(j%3)*.5).toFixed(1)}" fill="${j%2?"#fff":"#E7CFA0"}" opacity=".85"/>`}extra=`<g clip-path="url(#${k})">${s}</g>`}
+      if(p.fin==="art")extra=`<path d="M${-w*.3},${h*.95}Q${w*.5},${h*.55} ${-w*.1},${h*.1}" fill="none" stroke="#B8975A" stroke-width="1.4" stroke-linecap="round" clip-path="url(#${k})"/><circle cx="${w*.18}" cy="${h*.62}" r="2.2" fill="#B8975A"/>`;
+    }
+    const hl=(bare||p.fin==="matte")?"":`<path d="M${-w*.26},${h*.78}L${-w*.26},${h*.3}" stroke="#fff" stroke-opacity=".38" stroke-width="3" stroke-linecap="round" clip-path="url(#${k})"/>`;
+    const ridge=bare?`<path d="M${-w*.2},${h*.2}L${-w*.2},${h*.8}M${w*.15},${h*.25}L${w*.15},${h*.8}" stroke="#000" stroke-opacity=".08" stroke-width="1"/>`:"";
+    const rot=f.r+(bare?[3,-4,2,-3,5][i]:0);
+    out+=`<g transform="translate(${f.x},${f.y}) rotate(${rot}) translate(0,${-h})"><path d="${d}" fill="${fill}" stroke="rgba(0,0,0,.2)" stroke-width=".8"/>${extra}${hl}${ridge}</g>`;
+  });
+  return`<svg viewBox="0 0 320 240" role="img" aria-label="${o.label||p.name}"><defs>${defs}</defs>${out}</svg>`;
+}
+
+/* ---------- data ---------- */
+const P=[
+ {id:"p1",name:"Blush Hour",shape:"almond",occ:"Everyday",fin:"ombre",c:"#E8B2AA",c2:"#F7E4DF",price:1199,txt:"A soft sunrise fade from milk to petal. Goes with everything and shows growth gracefully."},
+ {id:"p2",name:"Noir Gloss",shape:"coffin",occ:"Party",fin:"gloss",c:"#241E1F",price:1299,txt:"Deep black with a mirror shine. Sharp coffin tips for nights out."},
+ {id:"p3",name:"Gold Leaf French",shape:"almond",occ:"Bridal",fin:"french",c:"#EBCFC4",price:1599,txt:"A classic French tip on a sheer blush base, finished with a gold line."},
+ {id:"p4",name:"Rose Chrome",shape:"almond",occ:"Party",fin:"chrome",c:"#D49C8B",price:1499,txt:"Liquid rose-gold chrome that moves with the light."},
+ {id:"p5",name:"Garnet Cat-Eye",shape:"stiletto",occ:"Party",fin:"cateye",c:"#8A2E41",price:1399,txt:"A magnetic garnet streak that shifts as your hand moves."},
+ {id:"p6",name:"Milk Bath",shape:"oval",occ:"Everyday",fin:"gloss",c:"#EFE6DB",price:899,txt:"Sheer, creamy and clean. The easiest set to wear to work."},
+ {id:"p7",name:"Pearl Veil",shape:"coffin",occ:"Bridal",fin:"glitter",c:"#EDE6EA",price:1899,txt:"Pearl base scattered with fine glitter. Made for wedding week."},
+ {id:"p8",name:"Mocha Matte",shape:"square",occ:"Everyday",fin:"matte",c:"#8F6E5F",price:999,txt:"A velvet matte in warm cocoa, with a short square shape."},
+ {id:"p9",name:"Sage Line Art",shape:"oval",occ:"Everyday",fin:"art",c:"#CBD3C0",price:1299,txt:"Muted sage with a single gold line drawn across each nail."},
+ {id:"p10",name:"Midnight Foil",shape:"stiletto",occ:"Party",fin:"chrome",c:"#3A4A7C",price:1699,txt:"Inky blue foil with a long stiletto shape and a cold shine."}
+];
+const SH=["All","Almond","Coffin","Square","Oval","Stiletto"],OC=["All","Everyday","Party","Bridal"];
+const finName={gloss:"Gloss",matte:"Matte",ombre:"Ombre",chrome:"Chrome",cateye:"Cat-eye",french:"French",glitter:"Glitter",art:"Line art"};
+const CITIES=["Delhi","Noida","Gurgaon"];
+const SVC=[
+ {id:"s1",name:"Gel manicure",min:60,price:1199,d:"Shape, cuticle care and a long-wear colour"},
+ {id:"s2",name:"Gel-X extensions, full set",min:120,price:2499,d:"New length and shape, built to last about three weeks"},
+ {id:"s3",name:"Extension refill",min:90,price:1599,d:"Fill the grow-out and refresh the colour"},
+ {id:"s4",name:"Bridal trial",min:90,price:1999,d:"Try your wedding set before the day"}
+];
+const ADD=[{id:"a1",name:"Nail art, per hand",min:20,price:400},{id:"a2",name:"Chrome or cat-eye finish",min:15,price:300},{id:"a3",name:"Removal of old gel",min:20,price:500},{id:"a4",name:"Hand massage",min:10,price:200}];
+const REELS=[
+ {n:"Riya",c:"Gurgaon",set:"Gold Leaf French",p:3,q:["I wanted something soft for my sister's wedding.","Anamika matched my dress colour in minutes.","Two weeks later, they still look new."]},
+ {n:"Meher",c:"Delhi",set:"Noir Gloss",p:2,q:["I booked on a Thursday and she was here Friday.","Everything was clean and she explained each step.","The shine is unreal."]},
+ {n:"Sana",c:"Noida",set:"Rose Chrome",p:4,q:["Ordered online and the sizing was spot on.","The kit had everything, even a tiny file.","I got three compliments before lunch."]},
+ {n:"Isha",c:"Mumbai",set:"Milk Bath",p:6,q:["I was nervous about press-ons for the office.","These look like my own nails, only better.","I have already reordered."]},
+ {n:"Tanvi",c:"Gurgaon",set:"Garnet Cat-Eye",p:5,q:["The cat-eye effect is better than the photos.","Booking the slot took one minute.","Best Saturday morning I have had in ages."]}
+];
+const BG=[["#4A2A33","#B9776F"],["#1B1416","#6A3A47"],["#6B4A44","#E1B3A4"],["#8C8576","#E9DFD3"],["#2D2F4C","#8F7FB0"]];
+
+/* ---------- reveal, progress, nav hide, cursor ---------- */
+const io="IntersectionObserver"in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.08}):null;
+$$(".rv").forEach(el=>io?io.observe(el):el.classList.add("in"));
+let lastY=0;const nav=$("#nav"),prog=$("#prog");
+addEventListener("scroll",()=>{const y=scrollY,h=document.documentElement.scrollHeight-innerHeight;prog.style.transform=`scaleX(${h>0?y/h:0})`;nav.classList.toggle("hide",y>lastY&&y>400);lastY=y;
+  if(!reduce){const hs=$("#heroSet");if(hs&&y<900)hs.style.transform=`translateY(${y*.06}px) rotate(${y*.008}deg)`}},{passive:true});
+const spot=$("#spot");let sx=0,sy=0,tx=0,ty=0;
+addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;tx=e.clientX;ty=e.clientY;spot.classList.add("on")},{passive:true});
+document.addEventListener("pointerleave",()=>spot.classList.remove("on"));
+(function loop(){sx+=(tx-sx)*.16;sy+=(ty-sy)*.16;spot.style.transform=`translate(${sx}px,${sy}px)`;requestAnimationFrame(loop)})();
+document.addEventListener("pointermove",e=>{
+  const m=e.target.closest?.(".mag");
+  $$(".mag").forEach(b=>{if(b!==m)b.style.translate=""});
+  if(m&&!reduce){const r=m.getBoundingClientRect();m.style.translate=`${(e.clientX-r.left-r.width/2)*.18}px ${(e.clientY-r.top-r.height/2)*.28}px`}
+  const c=e.target.closest?.(".card");if(c){const r=c.getBoundingClientRect();c.style.setProperty("--mx",((e.clientX-r.left)/r.width-.5).toFixed(2));c.style.setProperty("--my",((e.clientY-r.top)/r.height-.5).toFixed(2))}
+},{passive:true});
+$$("[data-go]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();closeAll();const id=a.dataset.go;(id==="top"?document.body:document.getElementById(id)).scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})}));
+
+/* ---------- overlays ---------- */
+const scrim=$("#scrim");let lastFocus=null;
+function openEl(el){lastFocus=document.activeElement;closeAll(true);el.classList.add("on");if(el.id!=="checkout"&&el.id!=="lbox"&&el.id!=="menuov")scrim.classList.add("on");document.body.style.overflow="hidden";setTimeout(()=>el.focus?.({preventScroll:true}),50)}
+function closeAll(keep){$$(".drawer.on,.checkout.on,.lightbox.on,.menuov.on").forEach(e=>e.classList.remove("on"));scrim.classList.remove("on");document.body.style.overflow="";$("#lb").innerHTML="";lbT.forEach(clearTimeout);lbT=[];if(!keep&&lastFocus)lastFocus.focus?.({preventScroll:true})}
+scrim.onclick=()=>closeAll();
+addEventListener("keydown",e=>{if(e.key==="Escape")closeAll()});
+document.addEventListener("click",e=>{if(e.target.closest("[data-close]"))closeAll();const o=e.target.closest("[data-open]");if(o&&o.dataset.open==="bag")openBag()});
+$("#menubtn").onclick=()=>openEl($("#menuov"));
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),2400)}
+
+/* ---------- hero art, marquee ---------- */
+$("#heroSet").innerHTML=nailSet(P[3],{label:"A set of rose chrome almond nails"});
+$("#marq").innerHTML=[0,1].map(()=>["Almond","Coffin","Rose chrome","French tip","Cat-eye","Bridal","Stiletto","Glazed","Hand finished","Delhi NCR visits","Shipped across India"].map(w=>`<span>${w}</span>`).join("")).join("");
+
+/* ---------- shop ---------- */
+let fs="All",fo="All";
+function chips(el,list,cur,set){list.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="fb";b.textContent=v;b.setAttribute("aria-pressed",v===cur);b.onclick=()=>{set(v);$$(".fb",el).forEach(x=>x.setAttribute("aria-pressed",x.textContent===v));renderGrid()};el.appendChild(b)})}
+chips($("#fShape"),SH,fs,v=>fs=v);chips($("#fOcc"),OC,fo,v=>fo=v);
+function renderGrid(){
+  const list=P.filter(p=>(fs==="All"||p.shape===fs.toLowerCase())&&(fo==="All"||p.occ===fo));
+  $("#grid").innerHTML=list.length?list.map(p=>`<button class="card rv in" type="button" data-id="${p.id}" aria-label="${p.name}, ${inr(p.price)}"><span class="pic"><span class="tg">${finName[p.fin]}</span>${nailSet(p)}<span class="btn sm quick" role="presentation">Quick view</span></span><span><h3>${p.name}</h3></span><span class="meta"><span>${p.shape[0].toUpperCase()+p.shape.slice(1)} &middot; ${p.occ}</span><span class="price">${inr(p.price)}</span></span></button>`).join(""):`<div class="empty">No sets in that combination yet. Try another shape.</div>`;
+}
+$("#grid").addEventListener("click",e=>{const c=e.target.closest(".card");if(c)openProduct(c.dataset.id)});
+renderGrid();
+
+/* ---------- cart ---------- */
+let cart=[];
+try{cart=JSON.parse(localStorage.getItem("hn-cart")||"[]").filter(i=>P.some(p=>p.id===i.id))}catch(e){cart=[]}
+const saveCart=()=>{try{localStorage.setItem("hn-cart",JSON.stringify(cart))}catch(e){}};
+const optLabel={std:"Standard kit, 12 sizes",cust:"Custom-fit, sized to your measurements"},optPrice={std:0,cust:300};
+const lineTotal=i=>(P.find(p=>p.id===i.id).price+optPrice[i.opt])*i.qty;
+const sub=()=>cart.reduce((s,i)=>s+lineTotal(i),0),count=()=>cart.reduce((s,i)=>s+i.qty,0);
+function updBag(){$("#bagn").textContent=count();const b=$("#bagbtn");b.classList.remove("bump");void b.offsetWidth;b.classList.add("bump")}
+function addToBag(id,opt,qty){const f=cart.find(i=>i.id===id&&i.opt===opt);f?f.qty+=qty:cart.push({id,opt,qty});saveCart();updBag();renderBag()}
+$("#bagn").textContent=count();
+const FREE=1499,SHIP=79;
+function renderBag(){
+  const body=$("#bagBody"),foot=$("#bagFoot");
+  if(!cart.length){body.innerHTML=`<div class="empty-bag"><p>Your bag is empty.</p><button class="btn" type="button" id="shopNow">Browse the collection</button></div>`;foot.innerHTML="";$("#shopNow").onclick=()=>{closeAll();document.getElementById("shop").scrollIntoView({behavior:"smooth"})};return}
+  const s=sub(),left=Math.max(0,FREE-s);
+  body.innerHTML=`<div><p style="font-size:14px">${left>0?`Add ${inr(left)} more for free delivery.`:"Your order ships free."}</p><div class="freebar"><i style="width:${Math.min(100,s/FREE*100)}%"></i></div></div>`+cart.map((i,ix)=>{const p=P.find(x=>x.id===i.id);return`<div class="line"><div class="th">${nailSet(p)}</div><div><h4>${p.name}</h4><small>${optLabel[i.opt]}</small><div class="qty" style="margin-top:8px"><button type="button" data-q="${ix}" data-d="-1" aria-label="Fewer">&minus;</button><span>${i.qty}</span><button type="button" data-q="${ix}" data-d="1" aria-label="More">+</button></div></div><div class="rt"><b>${inr(lineTotal(i))}</b><button class="tlink" type="button" data-rm="${ix}">Remove</button></div></div>`}).join("");
+  foot.innerHTML=`<div class="rows"><div><span>Subtotal</span><span>${inr(s)}</span></div><div><span>Delivery</span><span>${s>=FREE?"Free":inr(SHIP)}</span></div></div><button class="btn" type="button" id="goCo">Checkout <span class="arrow"></span></button>`;
+  $("#goCo").onclick=openCheckout;
+}
+$("#bagBody").addEventListener("click",e=>{const q=e.target.closest("[data-q]"),r=e.target.closest("[data-rm]");
+  if(q){const i=cart[+q.dataset.q];i.qty=Math.max(1,Math.min(9,i.qty+ +q.dataset.d))}
+  else if(r){cart.splice(+r.dataset.rm,1)}else return;
+  saveCart();$("#bagn").textContent=count();renderBag()});
+function openBag(){renderBag();openEl($("#bag"))}
+$("#bagbtn").onclick=openBag;
+
+/* ---------- delivery estimate ---------- */
+function eta(pin){if(!/^\d{6}$/.test(pin))return null;
+  if(/^(110|1220|2013)/.test(pin)||/^122/.test(pin))return{std:"1 to 2 days",exp:"Next day",d:[1,2]};
+  const f=pin[0];if("4567".includes(f))return{std:"4 to 6 days",exp:"2 to 3 days",d:[4,6]};
+  return{std:"3 to 5 days",exp:"2 to 3 days",d:[3,5]}}
+
+/* ---------- product drawer ---------- */
+let cur=null;
+function openProduct(id){
+  const p=P.find(x=>x.id===id);cur={p,opt:"std",qty:1};
+  $("#pbody").innerHTML=`<div class="pd-pic">${nailSet(p)}</div>
+   <div><div class="row"><h2>${p.name}</h2><span class="price" id="pdp">${inr(p.price)}</span></div>
+   <p class="eyebrow" style="margin-top:8px">${p.shape} &middot; ${finName[p.fin]} &middot; ${p.occ}</p></div>
+   <p style="color:var(--muted)">${p.txt}</p>
+   <div><div class="lbl" style="margin-bottom:10px">Sizing</div><div class="opts" role="radiogroup" aria-label="Sizing">
+     <label class="opt"><input type="radio" name="kit" value="std" checked><span class="t"><b>Standard kit</b><span>24 nails in 12 sizes. Use the size finder above.</span></span><span class="pr">Included</span></label>
+     <label class="opt"><input type="radio" name="kit" value="cust"><span class="t"><b>Custom-fit</b><span>Send your measurements on WhatsApp. We size it for you.</span></span><span class="pr">+${inr(300)}</span></label></div></div>
+   <div class="pin"><div class="field"><label for="dpin">Delivery pincode</label><input id="dpin" inputmode="numeric" maxlength="6" placeholder="6 digits"></div><button class="btn ghost sm" type="button" id="dchk">Check</button></div>
+   <div class="msg" id="dmsg" role="status"></div>
+   <ul><li>24 nails in 12 sizes, a prep kit and adhesive tabs</li><li>Reusable with fresh tabs or nail glue</li><li>Free re-size within seven days</li></ul>`;
+  $("#pfoot").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div class="qty"><button type="button" id="qm" aria-label="Fewer">&minus;</button><span id="qv">1</span><button type="button" id="qp" aria-label="More">+</button></div><button class="btn" type="button" id="addb" style="flex:1">Add to bag &middot; <span id="addp">${inr(p.price)}</span></button></div>`;
+  const upd=()=>{$("#qv").textContent=cur.qty;const u=p.price+optPrice[cur.opt];$("#pdp").textContent=inr(u);$("#addp").textContent=inr(u*cur.qty)};
+  $$('input[name="kit"]').forEach(r=>r.onchange=()=>{cur.opt=r.value;upd()});
+  $("#qm").onclick=()=>{cur.qty=Math.max(1,cur.qty-1);upd()};$("#qp").onclick=()=>{cur.qty=Math.min(9,cur.qty+1);upd()};
+  $("#dchk").onclick=()=>{const m=$("#dmsg"),e=eta($("#dpin").value.trim());m.className="msg show "+(e?"ok":"no");m.textContent=e?`Standard delivery in ${e.std}. Express in ${e.exp}.`:"Enter a valid 6 digit pincode."};
+  $("#addb").onclick=()=>{addToBag(p.id,cur.opt,cur.qty);closeAll(true);toast(`${p.name} added to your bag`)};
+  openEl($("#pdraw"));
+}
+
+/* ---------- size finder ---------- */
+const mm=$("#mm");
+function sizeUI(){const w=+mm.value,s=Math.max(0,Math.min(9,Math.round(18-w)));$("#sizeOut").innerHTML=`Size ${s}<small>${w.toFixed(1)} mm</small>`;$("#nailw").style.width=(w*6)+"px";
+  $("#sizeNote").textContent=s<=1?"A wide thumbnail. Choose the custom-fit option for the best result.":"Each kit holds twelve sizes, so a size either side still fits."}
+mm.oninput=sizeUI;sizeUI();
+
+/* ---------- availability ---------- */
+const SLOTS=[[10,0],[12,30],[15,0],[17,30],[19,30]];
+const fmtT=(h,m)=>{const ap=h>=12?"pm":"am",hh=((h+11)%12)+1;return hh+":"+String(m).padStart(2,"0")+" "+ap};
+const key=d=>d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
+function taken(d,i,city){const x=Math.sin((key(d)+city.length*7)*12.9898+i*78.233)*43758.5453;return(x-Math.floor(x))<.38}
+function slotsFor(d,city){const now=new Date();return SLOTS.map((s,i)=>{const dt=new Date(d.getFullYear(),d.getMonth(),d.getDate(),s[0],s[1]);return{i,label:fmtT(s[0],s[1]),dt,open:dt-now>=3*36e5&&!taken(d,i,city)}})}
+const DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function nextOpen(city){const t=new Date();for(let k=0;k<45;k++){const d=new Date(t.getFullYear(),t.getMonth(),t.getDate()+k);const s=slotsFor(d,city).find(x=>x.open);if(s)return{d,s}}return null}
+(function(){const n=nextOpen("Delhi");$("#nextslot").innerHTML=n?`Next home visit in Delhi: <b>${DN[n.d.getDay()]} ${n.d.getDate()} ${MN[n.d.getMonth()].slice(0,3)}, ${n.s.label}</b>`:"Home visit slots open soon"})();
+
+/* ---------- booking ---------- */
+const B={step:0,city:"Delhi",pin:"",svc:"s2",add:new Set(),date:null,slot:null,month:new Date(new Date().getFullYear(),new Date().getMonth(),1)};
+const bc=$("#bCity");
+function renderCity(){bc.innerHTML=CITIES.map(c=>`<button class="fb" type="button" data-c="${c}" aria-pressed="${c===B.city}">${c}</button>`).join("")}
+bc.onclick=e=>{const b=e.target.closest("[data-c]");if(!b)return;B.city=b.dataset.c;B.date=null;B.slot=null;renderCity();bsum()};renderCity();
+$("#svcList").innerHTML=SVC.map(s=>`<label class="opt"><input type="radio" name="svc" value="${s.id}" ${s.id===B.svc?"checked":""}><span class="t"><b>${s.name}</b><span>${s.d} &middot; ${s.min} min</span></span><span class="pr">${inr(s.price)}</span></label>`).join("");
+$("#addList").innerHTML=ADD.map(a=>`<label class="opt"><input type="checkbox" value="${a.id}"><span class="t"><b>${a.name}</b><span>${a.min} min</span></span><span class="pr">+${inr(a.price)}</span></label>`).join("");
+$("#svcList").onchange=e=>{B.svc=e.target.value;bsum()};
+$("#addList").onchange=e=>{e.target.checked?B.add.add(e.target.value):B.add.delete(e.target.value);bsum()};
+function cityFromPin(p){if(/^110\d{3}$/.test(p))return"Delhi";if(/^2013(0[1-9]|10)$/.test(p))return"Noida";if(/^122\d{3}$/.test(p))return"Gurgaon";return null}
+function setErr(f,t){f.classList.toggle("bad",!!t);f.querySelector(".err").textContent=t||""}
+function bsum(){
+  const s=SVC.find(x=>x.id===B.svc),ad=ADD.filter(a=>B.add.has(a.id)),tot=s.price+ad.reduce((t,a)=>t+a.price,0),min=s.min+ad.reduce((t,a)=>t+a.min,0);
+  const when=B.date?`${DN[B.date.getDay()]} ${B.date.getDate()} ${MN[B.date.getMonth()].slice(0,3)}${B.slot!=null?", "+SLOTS.map((x,i)=>fmtT(...x))[B.slot]:""}`:"Not chosen";
+  $("#bsum").innerHTML=`<dt>City</dt><dd>${B.city}${B.pin?" "+B.pin:""}</dd><dt>Service</dt><dd>${s.name}</dd>${ad.length?`<dt>Add-ons</dt><dd>${ad.map(a=>a.name).join(", ")}</dd>`:""}<dt>Time needed</dt><dd>About ${Math.floor(min/60)}h ${min%60?min%60+"m":""}</dd><dt>When</dt><dd>${when}</dd>`;
+  $("#btot").textContent=inr(tot);
+}
+function goStep(n){B.step=n;$$(".bp").forEach(p=>p.hidden=+p.dataset.p!==n);$$("#stepper button").forEach(b=>{b.removeAttribute("aria-current");if(+b.dataset.s===n)b.setAttribute("aria-current","step")});if(n===2)renderCal();bsum()}
+$("#stepper").onclick=e=>{const b=e.target.closest("button");if(!b||$("#bdone").classList.contains("show"))return;const n=+b.dataset.s;if(n<=B.step)goStep(n)};
+function validStep(n){
+  if(n===0){const f=$("#fPin"),v=$("#pin").value.trim(),m=$("#pinMsg"),c=cityFromPin(v);
+    if(!/^\d{6}$/.test(v)){setErr(f,"Enter a 6 digit pincode");return false}
+    if(!c){setErr(f,"");m.className="msg show no";m.innerHTML="We do not visit this area yet. You can still <a href=\"#shop\" data-go=\"shop\">order a set to be delivered</a>.";return false}
+    setErr(f,"");B.pin=v;if(c!==B.city){B.city=c;B.date=null;B.slot=null;renderCity();m.className="msg show ok";m.textContent=`That pincode is in ${c}. We switched your city.`}else{m.className="msg show ok";m.textContent=`We visit ${c}. Pincode ${v} is covered.`}return true}
+  if(n===2){if(!B.date||B.slot==null){$("#slotLbl").textContent="Choose a day and a time to continue";$("#slotLbl").style.color="var(--err)";return false}return true}
+  return true}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-next]")&&e.target.closest("#bpanel")){if(validStep(B.step))goStep(B.step+1)}
+  if(e.target.closest("[data-back]")&&e.target.closest("#bpanel"))goStep(B.step-1);
+  const a=e.target.closest("#pinMsg a[data-go]");if(a){e.preventDefault();document.getElementById("shop").scrollIntoView({behavior:"smooth"})}
+});
+function renderCal(){
+  const m=B.month,y=m.getFullYear(),mo=m.getMonth(),first=new Date(y,mo,1),n=new Date(y,mo+1,0).getDate(),off=(first.getDay()+6)%7,t=new Date(),today=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  $("#calTitle").textContent=`${MN[mo]} ${y}`;
+  const cm=new Date(t.getFullYear(),t.getMonth(),1);
+  $("#calPrev").disabled=m<=cm;$("#calNext").disabled=m>=new Date(cm.getFullYear(),cm.getMonth()+3,1);
+  let h="";for(let i=0;i<off;i++)h+='<span class="day blank"></span>';
+  for(let d=1;d<=n;d++){const dt=new Date(y,mo,d),op=slotsFor(dt,B.city).filter(s=>s.open).length,isSel=B.date&&key(B.date)===key(dt);
+    h+=`<button type="button" class="day${op>0&&op<=2?" few":""}${+dt===+today?" today":""}" data-d="${d}" ${op?"":"disabled"} aria-pressed="${!!isSel}" aria-label="${d} ${MN[mo]}, ${op?op+" slots open":"unavailable"}">${d}</button>`}
+  $("#days").innerHTML=h;renderSlots();
+}
+function renderSlots(){const box=$("#slots");$("#slotLbl").style.color="";
+  if(!B.date){box.innerHTML="";$("#slotLbl").textContent="Choose a day to see times";return}
+  $("#slotLbl").textContent=`Times on ${DN[B.date.getDay()]} ${B.date.getDate()} ${MN[B.date.getMonth()]}, ${B.city}`;
+  box.innerHTML=slotsFor(B.date,B.city).map(s=>`<button type="button" class="slot" data-i="${s.i}" ${s.open?"":"disabled"} aria-pressed="${B.slot===s.i}">${s.label}</button>`).join("")}
+$("#days").onclick=e=>{const b=e.target.closest(".day");if(!b||b.disabled)return;B.date=new Date(B.month.getFullYear(),B.month.getMonth(),+b.dataset.d);B.slot=null;renderCal();bsum()};
+$("#slots").onclick=e=>{const b=e.target.closest(".slot");if(!b||b.disabled)return;B.slot=+b.dataset.i;renderSlots();bsum()};
+$("#calPrev").onclick=()=>{B.month=new Date(B.month.getFullYear(),B.month.getMonth()-1,1);renderCal()};
+$("#calNext").onclick=()=>{B.month=new Date(B.month.getFullYear(),B.month.getMonth()+1,1);renderCal()};
+$("#confirmBook").onclick=()=>{
+  const chk=[["bn",v=>v.trim().length>1,"Enter your name"],["bph",v=>/^[6-9]\d{9}$/.test(v),"Enter a 10 digit mobile number"],["bad",v=>v.trim().length>8,"Add the address for the visit"]];
+  let ok=true;chk.forEach(([id,fn,m])=>{const el=$("#"+id),f=el.closest(".field"),g=fn(el.value);setErr(f,g?"":m);if(!g)ok=false});if(!ok)return;
+  const ref="HN-V"+Math.floor(100000+Math.random()*900000),s=SVC.find(x=>x.id===B.svc);
+  $$(".bp").forEach(p=>p.hidden=true);$("#stepper").style.display="none";
+  $("#dn").textContent=$("#bn").value.trim().split(" ")[0];$("#dref").textContent=ref;
+  $("#dtxt").textContent=`${s.name} on ${DN[B.date.getDay()]} ${B.date.getDate()} ${MN[B.date.getMonth()]} at ${fmtT(...SLOTS[B.slot])}, ${B.city}. This is a demo, so no confirmation message was sent.`;
+  const d=$("#bdone");d.classList.add("show");d.focus();
+};
+$("#bagain").onclick=()=>{$("#bdone").classList.remove("show");$("#stepper").style.display="";B.date=null;B.slot=null;goStep(0)};
+goStep(0);
+
+/* ---------- stories ---------- */
+$("#reel").innerHTML=REELS.map((r,i)=>{const p=P[r.p-1];const[a,b]=BG[i];return`<button class="vid" type="button" data-r="${i}" aria-label="Play ${r.n}'s story"><span class="poster" style="background:linear-gradient(160deg,${a},${b})">${nailSet(p,{label:p.name})}</span><span class="smp">Sample</span><span class="play"></span><span class="cap"><b>${r.n}</b><span>${r.c} &middot; ${r.set}</span></span></button>`}).join("");
+let lbT=[];
+$("#reel").onclick=e=>{const v=e.target.closest(".vid");if(!v)return;const r=REELS[+v.dataset.r],i=+v.dataset.r,p=P[r.p-1],[a,b]=BG[i];
+  openEl($("#lbox"));
+  $("#lb").innerHTML=`<div class="poster" style="background:linear-gradient(160deg,${a},${b})">${nailSet(p)}</div><div class="bar"><i class="go"></i></div><span class="smp2">Sample story</span><button class="x" type="button" data-close aria-label="Close video"></button><div class="tx" id="lbtx" aria-live="polite"></div><div class="who">${r.n} &middot; ${r.c} &middot; ${r.set}</div>`;
+  lbT.forEach(clearTimeout);lbT=[];
+  r.q.forEach((q,k)=>lbT.push(setTimeout(()=>{const t=$("#lbtx");if(t)t.textContent=q},k*4500)));
+  lbT.push(setTimeout(()=>closeAll(),14200));
+};
+function baRender(){$("#baAfter").innerHTML=nailSet(P[2],{label:"After: gold leaf french set"}).replace(/^<svg[^>]*>|<\/svg>$/g,"");$("#baBefore").innerHTML=nailSet({shape:"square",c:"#E8D3C8",fin:"matte",name:"Natural nails"},{bare:true,label:"Before: natural short nails"})}
+baRender();
+const baBox=$("#baBox");$("#baRange").oninput=e=>baBox.style.setProperty("--p",e.target.value+"%");
+
+/* ---------- checkout ---------- */
+const CO={ship:"std",pay:"upi",eta:null};
+function coTotals(){const s=sub(),dl=CO.ship==="exp"?149:(s>=FREE?0:SHIP),cod=CO.pay==="cod"?49:0;return{s,dl,cod,t:s+dl+cod}}
+function renderCo(){
+  $("#coItems").innerHTML=cart.map(i=>{const p=P.find(x=>x.id===i.id);return`<div class="line" style="grid-template-columns:56px 1fr auto;padding-bottom:12px"><div class="th">${nailSet(p)}</div><div><h4 style="font-size:calc(18px*var(--hs))">${p.name}</h4><small>${optLabel[i.opt].split(",")[0]} &middot; Qty ${i.qty}</small></div><b>${inr(lineTotal(i))}</b></div>`}).join("");
+  const T=coTotals();
+  $("#coRows").innerHTML=`<div><span>Subtotal</span><span>${inr(T.s)}</span></div><div><span>Delivery</span><span>${T.dl?inr(T.dl):"Free"}</span></div>${T.cod?`<div><span>Cash on delivery fee</span><span>${inr(T.cod)}</span></div>`:""}<div class="t"><span>Total</span><span>${inr(T.t)}</span></div>`;
+  $("#prStd").textContent=sub()>=FREE?"Free":inr(SHIP);
+}
+function openCheckout(){if(!cart.length)return;$("#coMain").hidden=false;$("#coDone").hidden=true;["co2","co3"].forEach(i=>$("#"+i).classList.add("dim"));$("#co1").classList.remove("dim");renderCo();openEl($("#checkout"))}
+$("#co1n").onclick=()=>{
+  const chk=[["cn",v=>v.trim().length>1,"Enter your full name"],["cp",v=>/^[6-9]\d{9}$/.test(v),"Enter a 10 digit mobile number"],["ce",v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),"Enter a valid email"],["ca",v=>v.trim().length>8,"Add your full address"],["cz",v=>/^\d{6}$/.test(v),"Enter a 6 digit pincode"],["cc",v=>v.trim().length>1,"Enter your city"]];
+  let ok=true;chk.forEach(([id,fn,m])=>{const el=$("#"+id),g=fn(el.value);setErr(el.closest(".field"),g?"":m);if(!g)ok=false});if(!ok)return;
+  CO.eta=eta($("#cz").value.trim());if(CO.eta){$("#etaStd").textContent=CO.eta.std;$("#etaExp").textContent=CO.eta.exp}
+  $("#co1").classList.add("dim");$("#co2").classList.remove("dim");$("#co2").scrollIntoView({behavior:"smooth",block:"center"})};
+$("#co2n").onclick=()=>{CO.ship=$('input[name="ship"]:checked').value;renderCo();$("#co2").classList.add("dim");$("#co3").classList.remove("dim");$("#co3").scrollIntoView({behavior:"smooth",block:"center"})};
+$$('input[name="ship"]').forEach(r=>r.onchange=()=>{CO.ship=r.value;renderCo()});
+$$('input[name="pay"]').forEach(r=>r.onchange=()=>{CO.pay=r.value;renderCo()});
+const PAYN={upi:"UPI",card:"Card",net:"Netbanking",cod:"Cash on delivery"};
+$("#place").onclick=()=>{
+  const T=coTotals(),id="HN"+Math.floor(100000+Math.random()*900000),e=CO.eta||{d:[3,5]},days=CO.ship==="exp"?(e.d[0]>1?2:1):e.d[0];
+  const fd=n=>{const d=new Date();d.setDate(d.getDate()+n);return`${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()].slice(0,3)}`};
+  $("#oname").textContent=$("#cn").value.trim().split(" ")[0];$("#oid").textContent=id;
+  $("#otx").textContent=`Your set would arrive around ${fd(days)} to ${fd(days+(CO.ship==="exp"?1:2))}. This is a demo, so no payment was taken and nothing was ordered.`;
+  $("#otrack").innerHTML=`<div class="now"><i></i><span>Order placed<small>Today</small></span></div><div><i></i><span>Packed with your prep kit<small>${fd(1)}</small></span></div><div><i></i><span>Shipped with a tracking link<small>${fd(Math.min(2,days))}</small></span></div><div><i></i><span>Delivered<small>${fd(days)} to ${fd(days+(CO.ship==="exp"?1:2))}</small></span></div>`;
+  $("#opay").textContent=PAYN[CO.pay]+(CO.pay==="cod"?", paid to the courier":", on the gateway's hosted page");
+  $("#oRows").innerHTML=$("#coRows").innerHTML;
+  cart=[];saveCart();$("#bagn").textContent=0;
+  $("#coMain").hidden=true;$("#coDone").hidden=false;$("#checkout").scrollTo({top:0});
+};
+</script>
