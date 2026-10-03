@@ -6,3 +6,5 @@ export * from "./catalogue";
 export * from "./shipping";
 export * from "./sizing";
 export * from "./checkout";
+export * from "./time";
+export * from "./booking";
