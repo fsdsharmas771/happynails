@@ -4,11 +4,15 @@ import { Redis } from "ioredis";
 import type { Logger } from "pino";
 import { Booking } from "../models/Booking";
 import { Order } from "../models/Order";
+import { cancelUnpaidBooking } from "../bookings/engine";
 import { cancelUnpaid } from "../orders/service";
 import type { Notifier } from "./notifier";
 import type { Jobs, NotificationJob } from "./types";
 
-type MaintenanceJob = { type: "expire_order"; orderId: string } | { type: "booking_reminders" };
+type MaintenanceJob =
+  | { type: "expire_order"; orderId: string }
+  | { type: "expire_booking"; bookingId: string }
+  | { type: "booking_reminders" };
 
 const ATTEMPTS = { attempts: 5, backoff: { type: "exponential", delay: 5000 } } as const;
 
@@ -84,6 +88,19 @@ export function startQueues(
     async notify(job) {
       await notifications.add(job.type, job, { ...ATTEMPTS, removeOnComplete: 1000, removeOnFail: 5000 });
     },
+    async scheduleBookingExpiry(bookingId, delayMs) {
+      await maintenance.add(
+        "expire_booking",
+        { type: "expire_booking", bookingId },
+        {
+          ...ATTEMPTS,
+          delay: delayMs,
+          jobId: `expire-booking-${bookingId}`,
+          removeOnComplete: true,
+          removeOnFail: 1000,
+        },
+      );
+    },
     async scheduleOrderExpiry(orderId, delayMs) {
       await maintenance.add(
         "expire_order",
@@ -109,6 +126,9 @@ export function startQueues(
         if (job.data.type === "expire_order") {
           const cancelled = await cancelUnpaid(job.data.orderId, "Payment not completed in time");
           if (cancelled) log.info({ orderId: job.data.orderId }, "unpaid order expired");
+        } else if (job.data.type === "expire_booking") {
+          const cancelled = await cancelUnpaidBooking(job.data.bookingId, "Payment not completed in time");
+          if (cancelled) log.info({ bookingId: job.data.bookingId }, "unpaid booking expired");
         } else {
           const n = await queueBookingReminders(jobs);
           log.info({ reminders: n }, "booking reminders queued");

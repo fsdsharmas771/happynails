@@ -52,7 +52,7 @@ export function createApp({ logger, allowedOrigins, checks, orders, bookings }: 
   app.use("/api/checkout", checkoutRouter(orders));
   app.use("/api/orders", ordersRouter(orders));
   app.use("/api/payments", paymentsRouter(orders));
-  app.use("/api/services", servicesRouter());
+  app.use("/api/services", servicesRouter(bookings));
   app.use("/api/availability", availabilityRouter(bookings));
   app.use("/api/bookings", bookingsRouter(bookings));
   app.use("/api/pincode", pincodeRouter());

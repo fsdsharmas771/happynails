@@ -9,7 +9,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { queueBookingReminders } from "../jobs/queues";
 import { AvailabilityBlock, AvailabilityRule, Booking, Service, Technician, Addon } from "../models/Booking";
 import { seedBookingSetup } from "../seed/bookings";
-import { fakeJobs, testApp, type FakeJobs } from "../test/app";
+import { cancelUnpaidBooking } from "../bookings/engine";
+import { travelSide, visitsClash } from "../config/bookings";
+import { fakeGateway, fakeJobs, signPayment, signWebhook, testApp, type FakeJobs } from "../test/app";
 import { useTestDb } from "../test/db";
 import { useTestRedis } from "../test/redis";
 
@@ -76,16 +78,17 @@ function confirm(holdToken: string, body: Record<string, unknown> = {}) {
       customer: { name: "Meher Kapoor", phone: "9876543210" },
       pincode: "110017",
       address: "B-12, Saket, New Delhi",
+      paymentMethod: "after_visit",
       ...body,
     });
 }
 
-async function insertBooking(techId: string, startsAt: string, minutes: number) {
+async function insertBooking(techId: string, startsAt: string, minutes: number, city = "Delhi") {
   const start = new Date(startsAt);
   return Booking.create({
     number: `HN-VTEST${Math.random().toString().slice(2, 8)}`,
     customer: { name: "X", phone: "9876543210" },
-    city: "Delhi",
+    city,
     pincode: "110017",
     address: "Somewhere in Delhi",
     serviceId: ids.gelx,
@@ -96,6 +99,8 @@ async function insertBooking(techId: string, startsAt: string, minutes: number) 
     startsAt: start,
     endsAt: new Date(start.getTime() + minutes * 60_000),
     status: "confirmed",
+    payment: { method: "after_visit", status: "due" },
+    trackTokenHash: "0".repeat(64),
   });
 }
 
@@ -330,5 +335,188 @@ describe("next slot and reminders", () => {
     expect(await queueBookingReminders(recorder, evening)).toBe(1);
     expect(recorder.notified).toEqual([{ type: "booking_reminder", bookingId: String(tomorrow._id) }]);
     expect(await queueBookingReminders(recorder, evening)).toBe(0);
+  });
+});
+
+describe("travel time between visits", () => {
+  it("needs an hour on the same side and four hours across the river", () => {
+    const h = 3_600_000;
+    const delhi = { start: 10 * h, end: 11 * h, side: travelSide("Delhi") };
+    expect(travelSide("Gurgaon")).toBe(travelSide("Delhi"));
+    expect(visitsClash(delhi, { start: 11.5 * h, end: 12.5 * h, side: travelSide("Gurgaon") })).toBe(true);
+    expect(visitsClash(delhi, { start: 12 * h, end: 13 * h, side: travelSide("Gurgaon") })).toBe(false);
+    expect(visitsClash(delhi, { start: 14.5 * h, end: 15 * h, side: travelSide("Noida") })).toBe(true);
+    expect(visitsClash(delhi, { start: 15 * h, end: 16 * h, side: travelSide("Noida") })).toBe(false);
+    // And the other way round.
+    expect(visitsClash({ start: 15 * h, end: 16 * h, side: travelSide("Noida") }, delhi)).toBe(false);
+  });
+
+  it("keeps four hours around a Noida visit for Delhi slots, one hour for Noida slots", async () => {
+    for (const tech of [ids.techA, ids.techB]) {
+      await insertBooking(tech, at("2026-10-06", "15:00"), 60, "Noida");
+    }
+    // Noida 15:00 to 16:00: a Delhi visit must end by 11:00 or start from 20:00.
+    expect(openTimes(await availability({ city: "Delhi" }), "2026-10-06")).toEqual(["10:00"]);
+    expect(openTimes(await availability({ city: "Noida" }), "2026-10-06")).toEqual([
+      "10:00",
+      "12:30",
+      "17:30",
+      "19:30",
+    ]);
+  });
+
+  it("keeps an hour between same-side visits", async () => {
+    for (const tech of [ids.techA, ids.techB]) {
+      await insertBooking(tech, at("2026-10-06", "13:00"), 90, "Gurgaon");
+    }
+    // Busy 13:00 to 14:30, so free again from 15:30; and a visit must end by 12:00.
+    expect(openTimes(await availability({ city: "Delhi" }), "2026-10-06")).toEqual([
+      "10:00",
+      "17:30",
+      "19:30",
+    ]);
+  });
+
+  it("applies the same gaps to holds", async () => {
+    for (let i = 0; i < 2; i++) {
+      expect((await hold(at("2026-10-06", "15:00"), { city: "Noida" })).status).toBe(201);
+    }
+    expect((await hold(at("2026-10-06", "12:30"))).status).toBe(409);
+    expect((await hold(at("2026-10-06", "10:00"))).status).toBe(201);
+    expect((await hold(at("2026-10-06", "12:30"), { city: "Noida" })).status).toBe(201);
+  });
+});
+
+describe("paying for a visit", () => {
+  let gw: ReturnType<typeof fakeGateway>;
+  beforeEach(() => {
+    gw = fakeGateway();
+    app = testApp({ redis, keyPrefix, jobs, now: () => NOW, gateway: gw.gateway });
+  });
+
+  function visitWebhook(event: string, payment: Record<string, unknown>, eventId: string) {
+    const body = JSON.stringify({ entity: "event", event, payload: { payment: { entity: payment } } });
+    return request(app)
+      .post("/api/webhooks/razorpay")
+      .set("Content-Type", "application/json")
+      .set("X-Razorpay-Signature", signWebhook(body))
+      .set("x-razorpay-event-id", eventId)
+      .send(body);
+  }
+
+  async function onlineBooking(time = "15:00") {
+    const h = await hold(at("2026-10-06", time));
+    const res = await confirm(h.body.holdToken, { paymentMethod: "online" });
+    expect(res.status).toBe(201);
+    return bookingConfirmationSchema.parse(res.body);
+  }
+
+  it("pay after the visit confirms straight away with payment due", async () => {
+    const h = await hold(at("2026-10-06", "15:00"));
+    const b = bookingConfirmationSchema.parse((await confirm(h.body.holdToken)).body);
+    expect(b).toMatchObject({ status: "confirmed", paymentMethod: "after_visit", paymentStatus: "due" });
+    expect(b.razorpay).toBeUndefined();
+    expect(jobs.notified).toHaveLength(1);
+  });
+
+  it("paying online holds the slot until the webhook confirms it", async () => {
+    const b = await onlineBooking();
+    expect(b).toMatchObject({ status: "pending_payment", paymentMethod: "online", paymentStatus: "pending" });
+    expect(b.razorpay).toMatchObject({ keyId: "rzp_test_dummy", amount: 119900, currency: "INR" });
+    expect(gw.created[0]).toMatchObject({ amount: 119900, receipt: b.number, notes: { kind: "booking" } });
+    expect(jobs.bookingExpiries).toEqual([{ bookingId: expect.any(String), delayMs: 30 * 60 * 1000 }]);
+    expect(jobs.notified).toEqual([]);
+
+    // The unpaid booking blocks its technician like a confirmed one.
+    const saved = await Booking.findOne({ number: b.number }).lean();
+    const other = saved!.technicianId.equals(ids.techA) ? ids.techB : ids.techA;
+    await insertBooking(other, at("2026-10-06", "15:00"), 60);
+    expect(openTimes(await availability(), "2026-10-06")).not.toContain("15:00");
+
+    const paid = { id: "pay_v1", order_id: b.razorpay!.orderId, amount: 119900, status: "captured" };
+    expect((await visitWebhook("payment.captured", paid, "evt_v1")).body.outcome).toBe("placed");
+    expect(await Booking.findOne({ number: b.number }).lean()).toMatchObject({
+      status: "confirmed",
+      payment: { method: "online", status: "captured", razorpayPaymentId: "pay_v1" },
+    });
+    expect(jobs.notified).toEqual([{ type: "booking_confirmed", bookingId: String(saved!._id) }]);
+
+    // Replays change nothing.
+    expect((await visitWebhook("payment.captured", paid, "evt_v1")).body.outcome).toBe("duplicate");
+    expect((await visitWebhook("order.paid", paid, "evt_v2")).body.outcome).toBe("already_final");
+    expect(jobs.notified).toHaveLength(1);
+  });
+
+  it("expires an unpaid booking, and honours a late payment only if the slot is still free", async () => {
+    const free = await onlineBooking("15:00");
+    const taken = await onlineBooking("15:00");
+    for (const b of [free, taken]) {
+      const doc = await Booking.findOne({ number: b.number }).lean();
+      expect(await cancelUnpaidBooking(String(doc!._id), "Payment not completed in time")).toBe(true);
+    }
+
+    // Someone else books the technician of the second one in the meantime.
+    const takenDoc = await Booking.findOne({ number: taken.number }).lean();
+    await insertBooking(String(takenDoc!.technicianId), at("2026-10-06", "15:00"), 60);
+
+    const pay = (b: typeof free, id: string) =>
+      visitWebhook("payment.captured", { id, order_id: b.razorpay!.orderId, amount: 119900 }, `evt_${id}`);
+    expect((await pay(free, "late1")).body.outcome).toBe("placed");
+    expect((await Booking.findOne({ number: free.number }).lean())?.status).toBe("confirmed");
+
+    expect((await pay(taken, "late2")).body.outcome).toBe("needs_refund");
+    const flagged = await Booking.findOne({ number: taken.number }).lean();
+    expect(flagged).toMatchObject({ status: "cancelled", payment: { status: "captured" } });
+    expect(flagged!.events.at(-1)!.note).toContain("refund needed");
+  });
+
+  it("lets the customer switch to paying after the visit, check the booking, and retry payment", async () => {
+    const b = await onlineBooking();
+    const access = { number: b.number, token: b.trackToken };
+
+    const retry = await request(app).post("/api/bookings/pay").send(access);
+    expect(retry.body.razorpay).toMatchObject({ orderId: b.razorpay!.orderId });
+
+    const later = await request(app).post("/api/bookings/pay-later").send(access);
+    expect(later.body).toMatchObject({
+      status: "confirmed",
+      paymentMethod: "after_visit",
+      paymentStatus: "due",
+    });
+    expect(jobs.notified).toHaveLength(1);
+    expect((await request(app).post("/api/bookings/pay").send(access)).status).toBe(409);
+
+    const tracked = await request(app).get("/api/bookings/track").query(access);
+    expect(tracked.body).toMatchObject({ number: b.number, status: "confirmed", firstName: "Meher" });
+    expect(tracked.text).not.toContain("9876543210");
+    expect(tracked.text).not.toContain("Saket");
+    const wrong = await request(app)
+      .get("/api/bookings/track")
+      .query({ ...access, token: "x".repeat(32) });
+    expect(wrong.status).toBe(404);
+  });
+
+  it("verifies the checkout signature without confirming", async () => {
+    const b = await onlineBooking();
+    const verify = (sig: string) =>
+      request(app).post("/api/bookings/verify-payment").send({
+        number: b.number,
+        razorpay_order_id: b.razorpay!.orderId,
+        razorpay_payment_id: "pay_x",
+        razorpay_signature: sig,
+      });
+    expect((await verify(signPayment(b.razorpay!.orderId, "pay_x"))).body).toEqual({
+      verified: true,
+      status: "pending_payment",
+    });
+    expect((await verify("0".repeat(64))).status).toBe(400);
+  });
+
+  it("refuses online payment without Razorpay keys but keeps the hold for paying later", async () => {
+    app = testApp({ redis, keyPrefix, jobs, now: () => NOW, gateway: null });
+    const h = await hold(at("2026-10-06", "15:00"));
+    expect((await confirm(h.body.holdToken, { paymentMethod: "online" })).status).toBe(503);
+    expect((await confirm(h.body.holdToken)).status).toBe(201);
+    expect((await request(app).get("/api/services")).body.onlinePaymentAvailable).toBe(false);
   });
 });

@@ -11,6 +11,8 @@ import type { Logger } from "pino";
 import { PAYMENT_TIMEOUT_MS } from "../config/checkout";
 import { HttpError } from "../errors";
 import type { Jobs } from "../jobs/types";
+import { applyBookingPayment, type RazorpayPaymentEntity } from "../bookings/engine";
+import { Booking } from "../models/Booking";
 import { Counter, Order, ProcessedWebhook, type OrderDoc } from "../models/Order";
 import { Product } from "../models/Product";
 import type { PaymentGateway } from "../payments/gateway";
@@ -212,14 +214,6 @@ export function toTrackedOrder(o: OrderDoc): TrackedOrder {
 
 // ---------- Razorpay webhook ----------
 
-interface RazorpayPaymentEntity {
-  id: string;
-  order_id: string;
-  amount: number;
-  status: string;
-  error_description?: string;
-}
-
 export interface RazorpayEvent {
   event: string;
   payload: { payment?: { entity: RazorpayPaymentEntity } };
@@ -232,7 +226,8 @@ export type WebhookOutcome =
   | "amount_mismatch"
   | "placed"
   | "already_final"
-  | "payment_failed";
+  | "payment_failed"
+  | "needs_refund";
 
 /**
  * Applies one verified webhook event. The event id is recorded in the same transaction as the
@@ -248,14 +243,23 @@ export async function applyRazorpayEvent(
 
   let outcome = "ignored" as WebhookOutcome;
   let placedOrderId: string | null = null;
+  let confirmedBookingId: string | null = null;
 
   try {
     await mongoose.connection.transaction(async (session) => {
       outcome = "ignored";
       placedOrderId = null;
+      confirmedBookingId = null;
       if (handled.includes(evt.event) && payment) {
         const order = await Order.findOne({ "payment.razorpayOrderId": payment.order_id }).session(session);
-        if (!order) outcome = "unknown_order";
+        // Home-visit bookings paid online share the same Razorpay account and webhook.
+        const booking = order
+          ? null
+          : await Booking.findOne({ "payment.razorpayOrderId": payment.order_id }).session(session);
+        if (booking) {
+          outcome = await applyBookingPayment(booking, evt.event, payment, session);
+          if (outcome === "placed") confirmedBookingId = booking.id;
+        } else if (!order) outcome = "unknown_order";
         else if (evt.event === "payment.failed") outcome = await recordFailure(order, payment, session);
         else if (payment.amount !== order.totalPaise) outcome = "amount_mismatch";
         else {
@@ -270,12 +274,17 @@ export async function applyRazorpayEvent(
     throw err;
   }
 
-  if (outcome === "amount_mismatch" || outcome === "unknown_order") {
+  if (outcome === "amount_mismatch" || outcome === "unknown_order" || outcome === "needs_refund") {
     deps.log.warn({ eventId, event: evt.event, outcome }, "razorpay event not applied");
   }
   if (placedOrderId) {
     await deps.jobs.notify({ type: "order_placed", orderId: placedOrderId }).catch((err) => {
       deps.log.error({ err, eventId }, "could not enqueue order notification");
+    });
+  }
+  if (confirmedBookingId) {
+    await deps.jobs.notify({ type: "booking_confirmed", bookingId: confirmedBookingId }).catch((err) => {
+      deps.log.error({ err, eventId }, "could not enqueue booking notification");
     });
   }
   return outcome;

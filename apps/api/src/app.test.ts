@@ -16,7 +16,7 @@ function appWith(mongo = up, redis = up) {
     allowedOrigins: ["http://localhost:5173"],
     checks: { mongo, redis },
     orders: { gateway: null, jobs: fakeJobs(), log: logger },
-    bookings: { redis: new Redis({ lazyConnect: true }), jobs: fakeJobs(), log: logger },
+    bookings: { redis: new Redis({ lazyConnect: true }), gateway: null, jobs: fakeJobs(), log: logger },
   });
 }
 

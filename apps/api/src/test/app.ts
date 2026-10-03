@@ -14,19 +14,25 @@ export const TEST_RAZORPAY = {
 export interface FakeJobs extends Jobs {
   notified: NotificationJob[];
   expiries: { orderId: string; delayMs: number }[];
+  bookingExpiries: { bookingId: string; delayMs: number }[];
 }
 
 export function fakeJobs(): FakeJobs {
   const notified: NotificationJob[] = [];
   const expiries: { orderId: string; delayMs: number }[] = [];
+  const bookingExpiries: { bookingId: string; delayMs: number }[] = [];
   return {
     notified,
     expiries,
+    bookingExpiries,
     async notify(job) {
       notified.push(job);
     },
     async scheduleOrderExpiry(orderId, delayMs) {
       expiries.push({ orderId, delayMs });
+    },
+    async scheduleBookingExpiry(bookingId, delayMs) {
+      bookingExpiries.push({ bookingId, delayMs });
     },
   };
 }
@@ -61,17 +67,19 @@ const idleRedis = () => new Redis({ lazyConnect: true });
 export function testApp(opts: TestAppOptions = {}) {
   const logger = pino({ level: "silent" });
   const jobs = opts.jobs ?? fakeJobs();
+  const gateway = opts.gateway === undefined ? fakeGateway().gateway : opts.gateway;
   return createApp({
     logger,
     allowedOrigins: ["http://localhost:5173"],
     checks: { mongo: async () => true, redis: async () => true },
     orders: {
-      gateway: opts.gateway === undefined ? fakeGateway().gateway : opts.gateway,
+      gateway,
       jobs,
       log: logger,
     },
     bookings: {
       redis: opts.redis ?? idleRedis(),
+      gateway,
       jobs,
       log: logger,
       ...(opts.keyPrefix ? { keyPrefix: opts.keyPrefix } : {}),

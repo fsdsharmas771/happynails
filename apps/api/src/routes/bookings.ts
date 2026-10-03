@@ -1,6 +1,8 @@
 import {
   addIstDays,
   availabilityQuerySchema,
+  bookingAccessSchema,
+  bookingPaymentVerifySchema,
   BOOKING_HORIZON_DAYS,
   createBookingRequestSchema,
   daysOfMonth,
@@ -17,14 +19,19 @@ import { z } from "zod";
 import {
   computeSlots,
   confirmBooking,
+  findBooking,
   loadSelection,
+  payBookingLater,
   placeHold,
   releaseHold,
+  resumeBookingPayment,
+  toTrackedBooking,
   type BookingDeps,
 } from "../bookings/engine";
-import { Addon, Service } from "../models/Booking";
+import { HttpError } from "../errors";
+import { Addon, Booking, Service } from "../models/Booking";
 
-export function servicesRouter(): Router {
+export function servicesRouter(deps: Pick<BookingDeps, "gateway">): Router {
   const router = Router();
   router.get("/", async (_req, res) => {
     const [services, addons] = await Promise.all([
@@ -47,6 +54,7 @@ export function servicesRouter(): Router {
         pricePaise: a.pricePaise,
         ...(a.unitNote ? { unitNote: a.unitNote } : {}),
       })),
+      onlinePaymentAvailable: !!deps.gateway,
     };
     res.json(body);
   });
@@ -129,6 +137,40 @@ export function bookingsRouter(deps: BookingDeps): Router {
   router.post("/", async (req, res) => {
     const input = createBookingRequestSchema.parse(req.body);
     res.status(201).json(await confirmBooking(input, deps));
+  });
+
+  router.get("/track", async (req, res) => {
+    const access = bookingAccessSchema.safeParse(req.query);
+    if (!access.success) throw new HttpError(404, "BOOKING_NOT_FOUND", "We could not find that booking");
+    res.set("Cache-Control", "no-store");
+    res.json(toTrackedBooking(await findBooking(access.data)));
+  });
+
+  /** Retry online payment for a booking still awaiting it. */
+  router.post("/pay", async (req, res) => {
+    res.json(await resumeBookingPayment(bookingAccessSchema.parse(req.body), deps));
+  });
+
+  /** Give up on paying online and pay after the visit instead. */
+  router.post("/pay-later", async (req, res) => {
+    res.json(await payBookingLater(bookingAccessSchema.parse(req.body), deps));
+  });
+
+  /** Checkout success callback: lets the page say "payment received". Only the webhook confirms. */
+  router.post("/verify-payment", async (req, res) => {
+    const body = bookingPaymentVerifySchema.parse(req.body);
+    if (!deps.gateway) throw new HttpError(503, "PAYMENTS_UNAVAILABLE", "Online payment is not available");
+    const b = await Booking.findOne({ number: body.number }).lean();
+    const valid =
+      !!b &&
+      b.payment.razorpayOrderId === body.razorpay_order_id &&
+      deps.gateway.verifyPaymentSignature(
+        body.razorpay_order_id,
+        body.razorpay_payment_id,
+        body.razorpay_signature,
+      );
+    if (!valid) throw new HttpError(400, "SIGNATURE_INVALID", "Payment could not be verified");
+    res.json({ verified: true, status: b.status });
   });
 
   return router;

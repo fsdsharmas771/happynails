@@ -1,4 +1,9 @@
-import { VISIT_CITIES } from "@happynails/shared";
+import {
+  BOOKING_PAYMENT_METHODS,
+  BOOKING_PAYMENT_STATUSES,
+  BOOKING_STATUSES,
+  VISIT_CITIES,
+} from "@happynails/shared";
 import { Schema, model, type HydratedDocument, type InferSchemaType } from "mongoose";
 
 const int = { validator: Number.isInteger, message: "{PATH} must be an integer" };
@@ -66,7 +71,20 @@ const availabilityBlockSchema = new Schema(
 );
 export const AvailabilityBlock = model("AvailabilityBlock", availabilityBlockSchema);
 
-export const BOOKING_STATUSES = ["confirmed", "completed", "cancelled", "no_show"] as const;
+/** Statuses that hold a technician: an unpaid online booking blocks its slot until it expires. */
+export const SLOT_BLOCKING_STATUSES = ["confirmed", "pending_payment"] as const;
+
+const bookingPaymentSchema = new Schema(
+  {
+    method: { type: String, required: true, enum: BOOKING_PAYMENT_METHODS },
+    status: { type: String, required: true, enum: BOOKING_PAYMENT_STATUSES },
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    paidAt: Date,
+    failureReason: String,
+  },
+  { _id: false },
+);
 
 const bookingSchema = new Schema(
   {
@@ -100,6 +118,9 @@ const bookingSchema = new Schema(
     startsAt: { type: Date, required: true },
     endsAt: { type: Date, required: true },
     status: { type: String, required: true, enum: BOOKING_STATUSES },
+    payment: { type: bookingPaymentSchema, required: true },
+    /** SHA-256 of the customer's access token; the token itself is only shown to them. */
+    trackTokenHash: { type: String, required: true },
     notes: { type: String, default: "" },
     reminderSentAt: Date,
     events: [
@@ -114,10 +135,18 @@ const bookingSchema = new Schema(
   { timestamps: true },
 );
 
-// Database-level guard against double booking: one confirmed booking per technician per start time.
+// Database-level guard against double booking: one slot-holding booking per technician per start.
 bookingSchema.index(
   { technicianId: 1, startsAt: 1 },
-  { unique: true, partialFilterExpression: { status: "confirmed" } },
+  {
+    name: "one_active_booking_per_technician_start",
+    unique: true,
+    partialFilterExpression: { status: { $in: [...SLOT_BLOCKING_STATUSES] } },
+  },
+);
+bookingSchema.index(
+  { "payment.razorpayOrderId": 1 },
+  { unique: true, partialFilterExpression: { "payment.razorpayOrderId": { $type: "string" } } },
 );
 bookingSchema.index({ technicianId: 1, status: 1, startsAt: 1, endsAt: 1 });
 bookingSchema.index({ status: 1, startsAt: 1 });
