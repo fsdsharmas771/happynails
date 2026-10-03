@@ -63,4 +63,34 @@ packages/ui      design tokens and, from phase 2, the theme provider and NailArt
 docker/          dev image
 ```
 
-Razorpay test steps and a deployment outline will be added in the phases that introduce them.
+## Payments (Razorpay, test mode)
+
+Without Razorpay keys the API starts normally and offers **cash on delivery only**. To enable online payment locally:
+
+1. In the Razorpay Dashboard, switch to **Test Mode** and generate API keys (Account & Settings > API Keys).
+2. Add to `.env` (never commit it), then `docker compose up -d api` to restart:
+   ```sh
+   RAZORPAY_KEY_ID=rzp_test_...
+   RAZORPAY_KEY_SECRET=...
+   RAZORPAY_WEBHOOK_SECRET=...   # any strong random string; you set the same value in step 4
+   ```
+3. Expose the API so Razorpay can reach the webhook. Either tool works:
+   ```sh
+   cloudflared tunnel --url http://localhost:4000
+   # or
+   ngrok http 4000
+   ```
+4. In the Dashboard (Test Mode) > Webhooks, add `https://<your-tunnel-host>/api/webhooks/razorpay` with the secret from step 2 and the events `payment.captured`, `payment.failed` and `order.paid`.
+5. Place an order with "Pay online" and use Razorpay's [test cards or test UPI ids](https://razorpay.com/docs/payments/payments/test-card-details/). The order page shows "Payment received" straight away and switches to "Thank you" once the webhook lands.
+
+How it fits together:
+
+- `POST /api/orders` prices the bag on the server, reserves stock in a Mongo transaction and creates the Razorpay order for that exact total. The browser gets only the key id and the Razorpay order id.
+- Checkout's success callback is checked at `POST /api/payments/razorpay/verify` (HMAC, timing-safe) so the page can say "payment received", but **only the webhook marks an order paid**.
+- The webhook verifies `X-Razorpay-Signature` over the raw body and records `x-razorpay-event-id` in the same transaction as the order change, so replays and concurrent duplicates are no-ops.
+- Unpaid orders are cancelled and their stock released after 30 minutes by a BullMQ job. A payment that arrives later is still honoured.
+- Without a tunnel, payments still complete in Razorpay but orders stay "waiting for payment" until they expire, because the webhook never arrives.
+
+Customers track orders at `/order/<number>?token=<token>`; the token is in their confirmation link and is stored only as a hash.
+
+A deployment outline will be added in the hardening phase.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type AnchorHTMLAttributes, type MouseEvent } from "react";
 import { useTheme } from "@happynails/ui";
-import { selectCount, useCart } from "../cart/store";
+import { selectCount, useBagDrawer, useCart } from "../cart/store";
 import { NAV_LINKS, SITE } from "../config/site";
 import { scrollToSection } from "../lib/motion";
 import { useDialog } from "../lib/useDialog";
@@ -38,6 +38,7 @@ export function ThemeToggle() {
 
 export function BagButton() {
   const count = useCart(selectCount);
+  const showBag = useBagDrawer((s) => s.show);
   const ref = useRef<HTMLButtonElement>(null);
   const first = useRef(true);
 
@@ -54,12 +55,12 @@ export function BagButton() {
     b.classList.add("bump");
   }, [count]);
 
-  // Opens the bag drawer once checkout lands in phase 4.
   return (
     <button
       className="bagbtn"
       type="button"
       ref={ref}
+      onClick={showBag}
       aria-label={`Bag, ${count} ${count === 1 ? "item" : "items"}`}
     >
       Bag <b>{count}</b>

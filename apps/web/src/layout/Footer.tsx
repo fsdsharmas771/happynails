@@ -1,4 +1,5 @@
 import { useTheme } from "@happynails/ui";
+import { useBagDrawer } from "../cart/store";
 import { SITE } from "../config/site";
 import { SectionLink } from "./Nav";
 
@@ -57,10 +58,10 @@ export function Footer() {
 }
 
 export function MobileBar() {
+  const showBag = useBagDrawer((s) => s.show);
   return (
     <div className="mbar">
-      {/* Opens the bag drawer once the cart lands in phase 4. */}
-      <button className="btn ghost" type="button">
+      <button className="btn ghost" type="button" onClick={showBag}>
         Bag
       </button>
       <SectionLink to="book" className="btn">

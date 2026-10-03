@@ -1,0 +1,282 @@
+/* Bag drawer, checkout and order confirmation, ported from docs/design-reference.html. */
+.line {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.line .th {
+  aspect-ratio: 1;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.line .th svg {
+  width: 92%;
+}
+.line .th img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.line h4 {
+  font-size: calc(20px * var(--hs));
+}
+.line small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.line small.na {
+  color: var(--err);
+}
+.line .qty {
+  margin-top: 8px;
+}
+.line .rt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.freebar {
+  height: 3px;
+  background: var(--line);
+  position: relative;
+  margin-top: 8px;
+}
+.freebar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--gold);
+  transition: width 0.6s var(--ease);
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+.rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.rows div.t {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.empty-bag {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  color: var(--muted);
+}
+
+/* Checkout page */
+.checkout {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.co-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: calc(18px + env(safe-area-inset-top, 0px)) 18px;
+  border-bottom: 1px solid var(--line);
+  max-width: 1240px;
+  margin-inline: auto;
+}
+.secure {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ok);
+}
+.lock {
+  width: 12px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+  margin-top: 6px;
+}
+.lock::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: -8px;
+  width: 6px;
+  height: 7px;
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+}
+.co {
+  max-width: 1240px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  padding-block: 36px 80px;
+  align-items: start;
+}
+.co h2 {
+  font-size: calc(40px * var(--hs));
+  margin-bottom: 22px;
+}
+.co-step {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.co-step h3 {
+  font-size: calc(26px * var(--hs));
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+}
+.co-step h3 i {
+  font-style: normal;
+  color: var(--gold);
+  font-size: calc(22px * var(--hs));
+}
+.co-step.dim {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.co-step .edit {
+  margin-left: auto;
+  pointer-events: auto;
+}
+.co-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.co-step .done-note {
+  color: var(--muted);
+  font-size: 14px;
+}
+.frm2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: clamp(20px, 3vw, 36px);
+  transition: background 0.5s;
+}
+.sum {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sum h4 {
+  font-size: calc(26px * var(--hs));
+}
+.sum .line {
+  grid-template-columns: 56px 1fr auto;
+  padding-bottom: 12px;
+}
+.sum .line h4 {
+  font-size: calc(18px * var(--hs));
+}
+.ref {
+  font-family: var(--display);
+  font-size: calc(30px * var(--hs));
+  color: var(--gold);
+}
+
+/* Order tracking timeline */
+.track {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+.track li {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 20px;
+  font-size: 14px;
+}
+.track li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 14px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.track li:last-child::before {
+  display: none;
+}
+.track i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  margin-top: 6px;
+}
+.track li.now i,
+.track li.past i {
+  background: var(--gold);
+}
+.track small {
+  display: block;
+  color: var(--muted);
+}
+.order-done {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+@media (max-width: 960px) {
+  .co {
+    grid-template-columns: 1fr;
+  }
+  .sum {
+    position: static;
+  }
+}
+@media (max-width: 560px) {
+  .frm2 {
+    grid-template-columns: 1fr;
+  }
+}

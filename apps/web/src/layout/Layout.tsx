@@ -1,4 +1,5 @@
 import { Outlet } from "react-router";
+import { BagDrawer } from "../cart/BagDrawer";
 import { ScrollProgress, Spotlight, useMagneticButtons } from "./Effects";
 import { Footer, MobileBar } from "./Footer";
 import { Nav } from "./Nav";
@@ -18,6 +19,7 @@ export function Layout() {
       </main>
       <Footer />
       <MobileBar />
+      <BagDrawer />
       <Toast />
     </>
   );

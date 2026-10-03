@@ -6,6 +6,9 @@ interface CartState {
   /** Slug, sizing option and quantity only. Prices always come from the server. */
   items: CartItem[];
   add: (item: CartItem) => void;
+  setQty: (slug: string, option: CartItem["option"], qty: number) => void;
+  remove: (slug: string, option: CartItem["option"]) => void;
+  clear: () => void;
 }
 
 // localStorage can throw (private mode, blocked site data); the bag then lasts for this visit only.
@@ -48,6 +51,17 @@ export const useCart = create<CartState>()(
             ),
           };
         }),
+      setQty: (slug, option, qty) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.slug === slug && i.option === option
+              ? { ...i, qty: Math.max(1, Math.min(MAX_QTY_PER_LINE, qty)) }
+              : i,
+          ),
+        })),
+      remove: (slug, option) =>
+        set((s) => ({ items: s.items.filter((i) => !(i.slug === slug && i.option === option)) })),
+      clear: () => set({ items: [] }),
     }),
     {
       name: "hn-cart",
@@ -64,3 +78,10 @@ export const useCart = create<CartState>()(
 );
 
 export const selectCount = (s: CartState) => s.items.reduce((n, i) => n + i.qty, 0);
+
+/** Whether the bag drawer is open. Not persisted. */
+export const useBagDrawer = create<{ open: boolean; show: () => void; hide: () => void }>()((set) => ({
+  open: false,
+  show: () => set({ open: true }),
+  hide: () => set({ open: false }),
+}));
