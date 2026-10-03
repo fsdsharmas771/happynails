@@ -17,6 +17,8 @@ Workspace packages export TypeScript source directly (no build step); Vite and `
 
 - `docker compose up` starts mongo, redis, a one-shot `install`, then api, web, admin. Do not run services directly on the host.
 - Run commands inside containers, for example `docker compose exec api pnpm test`, `docker compose exec api pnpm lint`, `docker compose exec api pnpm typecheck`. The api container has the whole repo mounted, so root scripts work from there.
+- API tests run against throwaway `hn_test_*` databases on the dev Mongo (no in-memory Mongo on Alpine), so they need the stack running.
+- Seed (idempotent, never overwrites edits): `docker compose exec api pnpm --filter @happynails/api seed`.
 - After changing dependencies: `docker compose run --rm install`, then restart the affected service.
 - Ports: api 4000, web 5173, admin 5174, mongo 27017, redis 6379.
 - `pnpm up` is pnpm's alias for `update`; use `pnpm run up` for the compose script.

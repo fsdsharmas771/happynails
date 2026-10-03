@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { pinoHttp } from "pino-http";
 import type { Logger } from "pino";
 import { errorHandler, notFound } from "./middleware/error";
+import { productsRouter, shippingRouter } from "./routes/catalogue";
 import { healthRouter, type HealthCheck } from "./routes/health";
 
 export interface AppDeps {
@@ -39,6 +40,8 @@ export function createApp({ logger, allowedOrigins, checks }: AppDeps): Express 
   app.use(express.json({ limit: "100kb" }));
 
   app.use("/api/health", healthRouter(checks));
+  app.use("/api/products", productsRouter());
+  app.use("/api/shipping", shippingRouter());
 
   app.use(notFound);
   app.use(errorHandler);
