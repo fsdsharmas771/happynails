@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type AnchorHTMLAttributes, type MouseEvent } from "react";
 import { useTheme } from "@happynails/ui";
+import { selectCount, useCart } from "../cart/store";
 import { NAV_LINKS, SITE } from "../config/site";
 import { scrollToSection } from "../lib/motion";
 import { useDialog } from "../lib/useDialog";
@@ -35,10 +36,32 @@ export function ThemeToggle() {
   );
 }
 
-export function BagButton({ count }: { count: number }) {
-  // Opens the bag drawer once the cart lands in phase 4.
+export function BagButton() {
+  const count = useCart(selectCount);
+  const ref = useRef<HTMLButtonElement>(null);
+  const first = useRef(true);
+
+  // Bump the badge whenever the count changes (not on first render).
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const b = ref.current;
+    if (!b) return;
+    b.classList.remove("bump");
+    void b.offsetWidth;
+    b.classList.add("bump");
+  }, [count]);
+
+  // Opens the bag drawer once checkout lands in phase 4.
   return (
-    <button className="bagbtn" type="button" aria-label={`Bag, ${count} items`}>
+    <button
+      className="bagbtn"
+      type="button"
+      ref={ref}
+      aria-label={`Bag, ${count} ${count === 1 ? "item" : "items"}`}
+    >
       Bag <b>{count}</b>
     </button>
   );
@@ -104,7 +127,7 @@ export function Nav() {
         </nav>
         <div className="tools">
           <ThemeToggle />
-          <BagButton count={0} />
+          <BagButton />
           <SectionLink to="book" className="btn sm mag">
             Book a visit
           </SectionLink>

@@ -16,6 +16,20 @@ export const SITE = {
   },
 } as const;
 
+/**
+ * What comes in every press-on kit, as shown in the product drawer and size finder.
+ * PLACEHOLDER: kit contents and the re-size promise come from the design prototype and are not confirmed.
+ */
+export const KIT = {
+  nails: 24,
+  sizes: 12,
+  features: [
+    "24 nails in 12 sizes, a prep kit and adhesive tabs",
+    "Reusable with fresh tabs or nail glue",
+    "Free re-size within seven days",
+  ],
+} as const;
+
 /** In-page sections the nav links to. Sections land in later phases; links to missing ones do nothing. */
 export const NAV_LINKS = [
   { id: "shop", label: "Collection" },

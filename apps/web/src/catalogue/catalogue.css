@@ -1,0 +1,369 @@
+/* Collection, product drawer and size finder, ported from docs/design-reference.html. */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.frow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.frow .k {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  width: 76px;
+  font-weight: 700;
+}
+.fb {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--rb);
+  padding: 7px 16px;
+  font-size: 13px;
+  transition:
+    background 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+}
+.fb:hover {
+  border-color: var(--fg);
+}
+.fb[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  cursor: pointer;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.card .pic {
+  position: relative;
+  aspect-ratio: 5/4.4;
+  background: radial-gradient(circle at 50% 38%, var(--panel), var(--bg2));
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition:
+    border-color 0.4s,
+    box-shadow 0.4s;
+}
+.card:hover .pic {
+  border-color: var(--gold);
+  box-shadow: var(--shadow);
+}
+.card .pic svg,
+.card .pic img {
+  width: 84%;
+  transition: transform 0.6s var(--ease);
+  transform: translate(calc(var(--mx, 0) * 10px), calc(var(--my, 0) * 8px));
+}
+.card .pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card:hover .pic svg,
+.card:hover .pic img {
+  transform: translate(calc(var(--mx, 0) * 10px), calc(var(--my, 0) * 8px)) scale(1.05);
+}
+.card .tg {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+.card .soldout {
+  left: auto;
+  right: 12px;
+  color: var(--err);
+}
+.card .quick {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  transform: translateY(130%);
+  transition: transform 0.5s var(--ease);
+}
+.card:hover .quick,
+.card:focus-visible .quick {
+  transform: none;
+}
+/* A button may only hold phrasing content, so the title is a span styled like the reference's h3. */
+.card .ttl {
+  display: block;
+  font-family: var(--display);
+  font-size: calc(24px * var(--hs));
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+}
+.card .meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  align-items: baseline;
+}
+.card .price {
+  color: var(--fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.empty {
+  padding: 40px;
+  border: 1px dashed var(--line);
+  text-align: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Product drawer */
+.pd-pic {
+  aspect-ratio: 5/4;
+  background: radial-gradient(circle at 50% 40%, var(--panel), var(--bg2));
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.pd-pic svg {
+  width: 86%;
+}
+.pd-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pd h2 {
+  font-size: calc(40px * var(--hs));
+  line-height: 1;
+}
+.pd .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.pd .price {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pd ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.pd li {
+  padding-left: 18px;
+  position: relative;
+}
+.pd li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 9px;
+  height: 1px;
+  background: var(--gold);
+}
+.pin {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+.pin .field {
+  flex: 1;
+}
+.addrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.addrow .btn {
+  flex: 1;
+}
+
+/* Size finder */
+.fit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 80px);
+  align-items: center;
+  background: var(--bg2);
+  margin-inline: calc(clamp(16px, 4vw, 52px) * -1);
+  padding: clamp(48px, 8vw, 100px) clamp(16px, 4vw, 52px);
+  transition: background 0.5s;
+}
+.fit > * {
+  min-width: 0;
+}
+.fit .l {
+  max-width: 560px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+.fit .l > p {
+  color: var(--muted);
+  max-width: 46ch;
+}
+.fit .r {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.steps3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.steps3 div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.steps3 b {
+  font-family: var(--display);
+  font-size: calc(20px * var(--hs));
+  color: var(--fg);
+  font-weight: 400;
+}
+.gauge {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.gauge .rule {
+  position: relative;
+  height: 120px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 12px);
+  border-bottom: 1px solid var(--fg);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.gauge .nailw {
+  background: var(--blush);
+  border: 1px solid var(--gold);
+  border-radius: 30px 30px 8px 8px;
+  height: 96px;
+  transition: width 0.25s var(--ease);
+  position: relative;
+}
+.gauge .nailw::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  top: 12%;
+  width: 2px;
+  height: 55%;
+  background: #fff;
+  opacity: 0.5;
+  border-radius: 2px;
+}
+.gauge output {
+  font-family: var(--display);
+  font-size: calc(46px * var(--hs));
+  line-height: 1;
+}
+.gauge output small {
+  font-family: var(--body);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin-left: 10px;
+}
+.gauge input[type="range"] {
+  width: 100%;
+  accent-color: var(--gold);
+}
+.sizeline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+  .fit {
+    grid-template-columns: 1fr;
+  }
+  .fit .l,
+  .fit .r {
+    margin: 0;
+    max-width: none;
+  }
+}
+@media (max-width: 560px) {
+  .steps3 {
+    grid-template-columns: 1fr;
+  }
+  .frow .k {
+    width: 100%;
+  }
+}
+
+.grid .empty {
+  grid-column: 1 / -1;
+}
+.opts-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.opts-group legend {
+  padding: 0;
+  margin-bottom: 10px;
+}
+.pin-check {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

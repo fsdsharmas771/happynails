@@ -1,0 +1,249 @@
+/* Overlays and form controls shared by the drawers, booking and checkout. Ported from the reference. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 8, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 70;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.scrim.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 100%);
+  background: var(--bg);
+  z-index: 80;
+  transform: translateX(102%);
+  transition:
+    transform 0.6s var(--ease),
+    background 0.5s,
+    visibility 0s linear 0.6s;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  visibility: hidden;
+}
+.drawer.on {
+  transform: none;
+  visibility: visible;
+  transition:
+    transform 0.6s var(--ease),
+    background 0.5s;
+}
+.drawer > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.drawer > header h3 {
+  font-size: calc(26px * var(--hs));
+}
+.drawer .body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+/* The body scrolls; its children keep their natural height instead of squashing to fit. */
+.drawer .body > * {
+  flex-shrink: 0;
+}
+.drawer .foot2 {
+  padding: 18px 24px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lbl,
+.field label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 10px 2px;
+  font: inherit;
+  color: var(--fg);
+  transition: border-color 0.3s;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.field .err {
+  color: var(--err);
+  font-size: 12px;
+  min-height: 1.2em;
+}
+.field.bad input,
+.field.bad textarea,
+.field.bad select {
+  border-color: var(--err);
+}
+.msg {
+  font-size: 13px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+}
+.msg.ok {
+  border-color: var(--ok);
+}
+.msg.no {
+  border-color: var(--err);
+}
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.opt {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  cursor: pointer;
+  border-radius: var(--r);
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+.opt:hover {
+  border-color: var(--fg);
+}
+.opt:has(input:checked) {
+  border-color: var(--gold);
+  background: var(--bg2);
+}
+.opt input {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  transition: border-color 0.2s;
+}
+.opt input[type="checkbox"] {
+  border-radius: 3px;
+}
+.opt input::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: scale(0);
+  transition: transform 0.25s var(--ease);
+}
+.opt input[type="checkbox"]::after {
+  border-radius: 1px;
+}
+.opt input:checked {
+  border-color: var(--gold);
+}
+.opt input:checked::after {
+  transform: scale(1);
+}
+.opt .t {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+.opt .t b {
+  font-weight: 600;
+}
+.opt .t span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.opt .pr {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--rb);
+}
+.qty button {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 0;
+  font-size: 16px;
+}
+.qty button[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+.qty span {
+  min-width: 26px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 160%);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 12px 22px;
+  border-radius: var(--rb);
+  font-size: 13px;
+  z-index: 120;
+  transition:
+    transform 0.5s var(--ease),
+    visibility 0s linear 0.5s;
+  max-width: calc(100% - 32px);
+  visibility: hidden;
+}
+.toast.on {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  transition: transform 0.5s var(--ease);
+}
+@media (max-width: 960px) {
+  .toast {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}

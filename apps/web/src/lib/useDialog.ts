@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
@@ -8,6 +8,12 @@ const FOCUSABLE =
  * locks page scroll, and returns focus to whatever opened it.
  */
 export function useDialog(open: boolean, ref: RefObject<HTMLElement | null>, onClose: () => void): void {
+  // Latest onClose without re-running the effect (which would bounce focus) when its identity changes.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     const el = ref.current;
     if (!open || !el) return;
@@ -20,7 +26,7 @@ export function useDialog(open: boolean, ref: RefObject<HTMLElement | null>, onC
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !el) return;
@@ -44,5 +50,5 @@ export function useDialog(open: boolean, ref: RefObject<HTMLElement | null>, onC
       document.body.style.overflow = overflow;
       opener?.focus?.({ preventScroll: true });
     };
-  }, [open, ref, onClose]);
+  }, [open, ref]);
 }
