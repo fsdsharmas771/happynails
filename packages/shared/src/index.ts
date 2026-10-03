@@ -5,3 +5,4 @@ export * from "./nail";
 export * from "./catalogue";
 export * from "./shipping";
 export * from "./sizing";
+export * from "./checkout";
