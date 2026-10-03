@@ -1,0 +1,108 @@
+/*
+ * Design tokens, ported verbatim from docs/design-reference.html.
+ * Light = Atelier Ivory (pale gallery ground, ink, gold leaf, Bodoni).
+ * Dark  = Noir Rosé (espresso, rose gold, Cormorant).
+ * Theme follows prefers-color-scheme until the user picks one, which sets data-theme on <html>.
+ */
+:root {
+  --bg: #f4f3f1;
+  --bg2: #eceae6;
+  --panel: #fbfaf9;
+  --fg: #2e2b2b;
+  --muted: #625d5c;
+  --line: #d8d4cf;
+  --accent: #2e2b2b;
+  --accentfg: #f4f3f1;
+  --hover: #7a6b40;
+  --hoverfg: #ffffff;
+  --gold: #7a6b40;
+  --blush: #eaddda;
+  --ok: #3f6b4a;
+  --err: #a23a33;
+  --display: "Bodoni Moda", "Didot", Georgia, serif;
+  --body: "Manrope", system-ui, sans-serif;
+  --hs: 1;
+  --r: 2px;
+  --rb: 999px;
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --spot-size: 34px;
+  --spot-bg: transparent;
+  --spot-bd: 1px solid var(--gold);
+  --spot-blend: normal;
+  --shadow: 0 18px 40px -22px rgba(46, 43, 43, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151012;
+    --bg2: #1b1416;
+    --panel: #211a1c;
+    --fg: #f3e9e6;
+    --muted: #b5a5a1;
+    --line: #3a2e31;
+    --accent: #d49c8b;
+    --accentfg: #1a1012;
+    --hover: #edbba9;
+    --hoverfg: #1a1012;
+    --gold: #d49c8b;
+    --blush: #3a2229;
+    --ok: #8fc59a;
+    --err: #f0877d;
+    --display: "Cormorant Garamond", "Georgia", serif;
+    --hs: 1.14;
+    --spot-size: 560px;
+    --spot-bg: radial-gradient(circle, rgba(212, 156, 139, 0.17), transparent 62%);
+    --spot-bd: 0;
+    --spot-blend: screen;
+    --shadow: 0 22px 50px -24px rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #151012;
+  --bg2: #1b1416;
+  --panel: #211a1c;
+  --fg: #f3e9e6;
+  --muted: #b5a5a1;
+  --line: #3a2e31;
+  --accent: #d49c8b;
+  --accentfg: #1a1012;
+  --hover: #edbba9;
+  --hoverfg: #1a1012;
+  --gold: #d49c8b;
+  --blush: #3a2229;
+  --ok: #8fc59a;
+  --err: #f0877d;
+  --display: "Cormorant Garamond", "Georgia", serif;
+  --hs: 1.14;
+  --spot-size: 560px;
+  --spot-bg: radial-gradient(circle, rgba(212, 156, 139, 0.17), transparent 62%);
+  --spot-bd: 0;
+  --spot-blend: screen;
+  --shadow: 0 22px 50px -24px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
+  transition:
+    background 0.5s,
+    color 0.5s;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
