@@ -1,0 +1,67 @@
+/* Phase 1 boot screen only; the real shell arrives in later phases. */
+body {
+  padding-inline: clamp(16px, 4vw, 52px);
+}
+.boot {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 22px;
+  max-width: 640px;
+  margin-inline: auto;
+}
+.mono {
+  width: 52px;
+  height: 52px;
+  border: 1.5px solid var(--fg);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-size: calc(22px * var(--hs));
+}
+.eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+}
+h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: calc(clamp(40px, 7vw, 72px) * var(--hs));
+  line-height: 1;
+}
+.status {
+  list-style: none;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.status li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+}
+.dot[data-s="ok"] {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.dot[data-s="down"] {
+  background: var(--err);
+  border-color: var(--err);
+}
