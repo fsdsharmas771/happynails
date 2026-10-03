@@ -1,0 +1,285 @@
+/*
+ * Element defaults and shared primitives, ported from docs/design-reference.html.
+ * Class names match the reference so the two can be compared side by side.
+ * Import after tokens.css.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition:
+    background 0.5s,
+    color 0.5s;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--display);
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+  letter-spacing: -0.005em;
+}
+p {
+  margin: 0;
+}
+em {
+  font-style: italic;
+}
+a {
+  color: inherit;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+img {
+  max-width: 100%;
+}
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.wrap {
+  max-width: 1240px;
+  margin-inline: auto;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+}
+.h2 {
+  font-size: calc(clamp(34px, 5vw, 60px) * var(--hs));
+  line-height: 1.02;
+}
+.sec {
+  padding-block: clamp(64px, 10vw, 120px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 4vw, 48px);
+}
+.sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  align-items: end;
+  justify-content: space-between;
+}
+.sec-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+  min-width: 0;
+}
+.sec-head p.sub {
+  color: var(--muted);
+  max-width: 52ch;
+}
+.note {
+  font-size: 12px;
+  color: var(--muted);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Scroll reveal: transform only, so content is always visible at rest. */
+.rv {
+  transform: translateY(30px);
+  transition: transform 1s var(--ease);
+}
+.rv.in {
+  transform: none;
+}
+
+/* Buttons */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accentfg);
+  border-radius: var(--rb);
+  padding: 14px 28px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition:
+    background 0.35s,
+    color 0.35s,
+    border-color 0.35s,
+    transform 0.25s var(--ease);
+}
+.btn:hover {
+  background: var(--hover);
+  border-color: var(--hover);
+  color: var(--hoverfg);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--fg);
+}
+.btn.ghost:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+.btn.sm {
+  padding: 10px 18px;
+  font-size: 12px;
+}
+.btn[disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.arrow {
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  position: relative;
+  transition: width 0.3s var(--ease);
+}
+.arrow::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+.btn:hover .arrow {
+  width: 32px;
+}
+.tlink {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.tlink:hover {
+  color: var(--fg);
+}
+
+/* Round close button drawn with two pseudo-element strokes. */
+.x {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  position: relative;
+  flex: none;
+}
+.x::before,
+.x::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.x::after {
+  transform: rotate(-45deg);
+}
+.x:hover {
+  border-color: var(--fg);
+}
+
+/* Brand mark */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.mono {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--fg);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-size: calc(17px * var(--hs));
+  letter-spacing: 0.02em;
+}
+.bn {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  font-size: 11px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.bn small {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: calc(13px * var(--hs));
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--gold);
+  font-weight: 400;
+  margin-top: 3px;
+}
+@media (max-width: 560px) {
+  .bn small {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .rv {
+    transform: none;
+  }
+}

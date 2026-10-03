@@ -83,26 +83,3 @@
   --shadow: 0 22px 50px -24px rgba(0, 0, 0, 0.8);
   color-scheme: dark;
 }
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--body);
-  font-size: 15px;
-  line-height: 1.6;
-  transition:
-    background 0.5s,
-    color 0.5s;
-}
-
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 3px;
-}
