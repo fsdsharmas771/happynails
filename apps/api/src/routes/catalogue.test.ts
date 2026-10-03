@@ -1,20 +1,15 @@
-import { pino } from "pino";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { productDetailResponseSchema, productListResponseSchema } from "@happynails/shared";
-import { createApp } from "../app";
 import { Product } from "../models/Product";
 import { SEED_PRODUCTS } from "../seed/products";
 import { seedProducts } from "../seed/seedProducts";
+import { testApp } from "../test/app";
 import { useTestDb } from "../test/db";
 
 useTestDb();
 
-const app = createApp({
-  logger: pino({ level: "silent" }),
-  allowedOrigins: [],
-  checks: { mongo: async () => true, redis: async () => true },
-});
+const app = testApp();
 
 describe("GET /api/products", () => {
   it("lists active sets in sort order with sizing options and no stock counts", async () => {

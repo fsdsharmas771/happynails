@@ -3,13 +3,19 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { healthResponseSchema } from "@happynails/shared";
 import { createApp } from "./app";
+import { fakeJobs } from "./test/app";
 
 const logger = pino({ level: "silent" });
 const up = async () => true;
 const down = async () => false;
 
 function appWith(mongo = up, redis = up) {
-  return createApp({ logger, allowedOrigins: ["http://localhost:5173"], checks: { mongo, redis } });
+  return createApp({
+    logger,
+    allowedOrigins: ["http://localhost:5173"],
+    checks: { mongo, redis },
+    orders: { gateway: null, jobs: fakeJobs(), log: logger },
+  });
 }
 
 describe("GET /api/health", () => {

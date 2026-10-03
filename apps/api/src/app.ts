@@ -7,16 +7,19 @@ import type { Logger } from "pino";
 import { errorHandler, notFound } from "./middleware/error";
 import { productsRouter, shippingRouter } from "./routes/catalogue";
 import { healthRouter, type HealthCheck } from "./routes/health";
+import { checkoutRouter, ordersRouter, paymentsRouter, webhooksRouter } from "./routes/orders";
+import type { OrderDeps } from "./orders/service";
 
 export interface AppDeps {
   logger: Logger;
   allowedOrigins: string[];
   checks: { mongo: HealthCheck; redis: HealthCheck };
+  orders: OrderDeps;
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
 
-export function createApp({ logger, allowedOrigins, checks }: AppDeps): Express {
+export function createApp({ logger, allowedOrigins, checks, orders }: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -36,12 +39,16 @@ export function createApp({ logger, allowedOrigins, checks }: AppDeps): Express 
   app.use(helmet());
   app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-  // Routes that need the raw body (the Razorpay webhook) must be mounted above this line.
+  // Raw-body routes first: the Razorpay webhook signature covers the exact bytes received.
+  app.use("/api/webhooks", webhooksRouter(orders));
   app.use(express.json({ limit: "100kb" }));
 
   app.use("/api/health", healthRouter(checks));
   app.use("/api/products", productsRouter());
   app.use("/api/shipping", shippingRouter());
+  app.use("/api/checkout", checkoutRouter(orders));
+  app.use("/api/orders", ordersRouter(orders));
+  app.use("/api/payments", paymentsRouter(orders));
 
   app.use(notFound);
   app.use(errorHandler);
