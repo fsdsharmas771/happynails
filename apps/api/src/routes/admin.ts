@@ -301,15 +301,13 @@ export function adminRouter(deps: AdminDeps): Router {
           `${kind === "image" ? "Images" : "Videos"} can be up to ${UPLOAD_LIMITS[kind] / 1024 / 1024} MB`,
         );
       }
-      res
-        .status(201)
-        .json(
-          await deps.uploads.save({
-            buffer: file.buffer,
-            ext: detected.ext,
-            contentType: detected.contentType,
-          }),
-        );
+      res.status(201).json(
+        await deps.uploads.save({
+          buffer: file.buffer,
+          ext: detected.ext,
+          contentType: detected.contentType,
+        }),
+      );
     },
   );
 
