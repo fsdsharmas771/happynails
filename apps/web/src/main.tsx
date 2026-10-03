@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@happynails/ui/tokens.css";
-import "./app.css";
+import "@happynails/ui/base.css";
 import { App } from "./App";
 
 const root = document.getElementById("root");

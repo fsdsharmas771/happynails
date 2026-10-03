@@ -1,0 +1,107 @@
+import { useEffect, useRef } from "react";
+import { NailArt } from "@happynails/ui";
+import { SectionLink } from "../layout/Nav";
+import { prefersReducedMotion } from "../lib/motion";
+import "./hero.css";
+
+const MARQUEE_WORDS = [
+  "Almond",
+  "Coffin",
+  "Rose chrome",
+  "French tip",
+  "Cat-eye",
+  "Bridal",
+  "Stiletto",
+  "Glazed",
+  "Hand finished",
+  "Delhi NCR visits",
+  "Shipped across India",
+];
+
+export function Hero() {
+  const setRef = useRef<HTMLDivElement>(null);
+
+  // Gentle parallax on the floating set while the hero is on screen.
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const onScroll = () => {
+      const y = scrollY;
+      if (setRef.current && y < 900) {
+        setRef.current.style.transform = `translateY(${y * 0.06}px) rotate(${y * 0.008}deg)`;
+      }
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    return () => removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <section className="hero" aria-label="Welcome">
+      <div className="hero-copy">
+        <p className="eyebrow">Press-on extensions &nbsp;/&nbsp; Home visits in Delhi NCR</p>
+        <h1>
+          <span className="ln">
+            <span>Salon nails,</span>
+          </span>
+          <span className="ln">
+            <span>
+              <em>wherever</em>
+            </span>
+          </span>
+          <span className="ln">
+            <span>you are.</span>
+          </span>
+        </h1>
+        <p className="lead">
+          Hand-finished sets delivered across India. Or book Anamika&rsquo;s team to do them at your home in
+          Delhi, Noida or Gurgaon.
+        </p>
+        <div className="cta">
+          <SectionLink to="shop" className="btn mag">
+            Shop the collection <span className="arrow" />
+          </SectionLink>
+          <SectionLink to="book" className="btn ghost mag">
+            Book a home visit
+          </SectionLink>
+        </div>
+        <div className="nextslot">
+          <span className="pulse" />
+          {/* Shows the next real open slot once availability exists (phase 5). */}
+          <span>Home visit slots open soon</span>
+        </div>
+      </div>
+      <div className="hero-art">
+        <svg className="ring" viewBox="0 0 600 600" aria-hidden="true">
+          <ellipse cx="300" cy="300" rx="286" ry="280" strokeWidth="5" transform="rotate(-24 300 300)" />
+          <ellipse
+            className="b"
+            cx="300"
+            cy="304"
+            rx="276"
+            ry="288"
+            strokeWidth="1.6"
+            transform="rotate(8 300 300)"
+          />
+        </svg>
+        <div className="hero-set" ref={setRef}>
+          <NailArt shape="almond" finish="chrome" color="#D49C8B" label="A set of rose chrome almond nails" />
+        </div>
+        <span className="chip c1">Delhi &middot; Noida &middot; Gurgaon</span>
+        <span className="chip c2">Delivery across India</span>
+      </div>
+    </section>
+  );
+}
+
+export function Marquee() {
+  // Two copies side by side so the -50% loop is seamless.
+  const words = [...MARQUEE_WORDS, ...MARQUEE_WORDS];
+  return (
+    <div className="marq" aria-hidden="true">
+      <div className="marq-in">
+        {words.map((w, i) => (
+          <span key={i}>{w}</span>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -1,31 +1,20 @@
-import { useApiHealth } from "./useApiHealth";
+import { BrowserRouter, Route, Routes } from "react-router";
+import { ThemeProvider } from "@happynails/ui";
+import { HomePage } from "./home/HomePage";
+import { Layout } from "./layout/Layout";
+import { NotFound } from "./NotFound";
 
 export function App() {
-  const health = useApiHealth();
-
   return (
-    <main className="boot">
-      <span className="mono" aria-hidden="true">
-        HN
-      </span>
-      <p className="eyebrow">Storefront</p>
-      <h1>Happy Nails</h1>
-      <ul className="status" aria-live="polite">
-        {health.state === "loading" && <li>Checking the API</li>}
-        {health.state === "unreachable" && (
-          <li>
-            <span className="dot" data-s="down" />
-            API unreachable
-          </li>
-        )}
-        {health.state === "ready" &&
-          (["mongo", "redis"] as const).map((dep) => (
-            <li key={dep}>
-              <span className="dot" data-s={health.body.checks[dep]} />
-              {dep === "mongo" ? "MongoDB" : "Redis"} {health.body.checks[dep]}
-            </li>
-          ))}
-      </ul>
-    </main>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

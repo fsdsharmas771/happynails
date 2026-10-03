@@ -1,0 +1,214 @@
+/* Hero and marquee, ported from docs/design-reference.html (class names kept). */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: center;
+  padding-block: clamp(36px, 6vw, 80px) clamp(48px, 7vw, 96px);
+}
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.hero h1 {
+  font-size: calc(clamp(46px, 8vw, 104px) * var(--hs));
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+}
+/* Page-load line reveal: each line rises out of its own clipped box. */
+.ln {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+}
+.ln > span {
+  display: block;
+  animation: rise 1.2s var(--ease) both;
+}
+.ln:nth-child(2) > span {
+  animation-delay: 0.12s;
+}
+.ln:nth-child(3) > span {
+  animation-delay: 0.24s;
+}
+@keyframes rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+.hero p.lead {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 46ch;
+}
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nextslot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.nextslot b {
+  color: var(--fg);
+  font-weight: 600;
+}
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  position: relative;
+  flex: none;
+}
+.pulse::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  animation: ping 2.4s ease-out infinite;
+}
+@keyframes ping {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.hero-art {
+  position: relative;
+  aspect-ratio: 1/1;
+  width: 100%;
+  max-width: 620px;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+}
+/* Self-drawing brush ring. */
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.ring ellipse {
+  fill: none;
+  stroke: var(--fg);
+  stroke-linecap: round;
+  stroke-dasharray: 1900;
+  stroke-dashoffset: 1900;
+  animation: draw 2.6s var(--ease) 0.3s forwards;
+}
+.ring ellipse.b {
+  stroke: var(--gold);
+  animation-delay: 0.6s;
+  animation-duration: 2.9s;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.hero-set {
+  position: relative;
+  width: 78%;
+  filter: drop-shadow(0 26px 24px rgba(0, 0, 0, 0.22));
+  animation: floaty 7s ease-in-out infinite;
+  transition: transform 0.3s;
+}
+.hero-set svg {
+  display: block;
+  width: 100%;
+}
+@keyframes floaty {
+  50% {
+    translate: 0 -10px;
+  }
+}
+.chip {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 9px 14px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  border-radius: var(--rb);
+  box-shadow: var(--shadow);
+  animation: floaty 8s ease-in-out infinite;
+}
+.chip.c1 {
+  left: -2%;
+  top: 16%;
+}
+.chip.c2 {
+  right: 0;
+  bottom: 12%;
+  animation-delay: -3s;
+}
+
+/* Marquee */
+.marq {
+  margin-inline: calc(clamp(16px, 4vw, 52px) * -1);
+  border-block: 1px solid var(--line);
+  overflow: hidden;
+  padding-block: 18px;
+  background: var(--bg2);
+  transition: background 0.5s;
+}
+.marq-in {
+  display: flex;
+  width: max-content;
+  animation: marq 38s linear infinite;
+}
+.marq span {
+  font-family: var(--display);
+  font-size: calc(26px * var(--hs));
+  font-style: italic;
+  white-space: nowrap;
+  padding-inline: 26px;
+  display: flex;
+  align-items: center;
+  gap: 52px;
+}
+.marq span::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  transform: rotate(45deg);
+}
+@keyframes marq {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .hero-art {
+    max-width: 460px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marq-in {
+    animation: none;
+  }
+}
