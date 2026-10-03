@@ -3,7 +3,6 @@ import {
   orderAccessSchema,
   quoteRequestSchema,
   verifyPaymentRequestSchema,
-  type PaymentMethod,
 } from "@happynails/shared";
 import express, { Router } from "express";
 import { HttpError } from "../errors";
@@ -19,16 +18,12 @@ import {
   type RazorpayEvent,
 } from "../orders/service";
 
-export function paymentMethods(deps: Pick<OrderDeps, "gateway">): PaymentMethod[] {
-  return deps.gateway ? ["razorpay", "cod"] : ["cod"];
-}
-
 export function checkoutRouter(deps: Pick<OrderDeps, "gateway">): Router {
   const router = Router();
   router.post("/quote", async (req, res) => {
     const q = quoteRequestSchema.parse(req.body);
-    const cart = await priceCart(q.items, q.shippingSpeed, q.paymentMethod);
-    res.json(toQuoteResponse(cart, paymentMethods(deps)));
+    const cart = await priceCart(q.items, q.shippingSpeed);
+    res.json(toQuoteResponse(cart, !!deps.gateway));
   });
   return router;
 }

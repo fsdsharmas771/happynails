@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,7 +7,6 @@ import {
   formatINR,
   INDIAN_STATES,
   type CreateOrderResponse,
-  type PaymentMethod,
   type ShippingSpeed,
 } from "@happynails/shared";
 import { LineThumb } from "../cart/LineThumb";
@@ -110,7 +109,7 @@ function errorMessage(err: unknown): string {
       case "OUT_OF_STOCK":
         return "A set in your bag just sold out. Your bag has been updated; please review it.";
       case "PAYMENTS_UNAVAILABLE":
-        return "Online payment is not available right now. Please choose cash on delivery.";
+        return "Online payment is not available right now. Please try again later.";
       case "PAYMENT_GATEWAY_ERROR":
         return "We could not start the payment. Please try again.";
       case "VALIDATION_ERROR":
@@ -130,13 +129,12 @@ export function CheckoutPage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [speed, setSpeed] = useState<ShippingSpeed>("standard");
-  const [method, setMethod] = useState<PaymentMethod>("razorpay");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   /** Set once an order exists; from then on retries pay for this same order. */
   const [created, setCreated] = useState<CreateOrderResponse | null>(null);
 
-  const quote = useQuote(speed, method);
+  const quote = useQuote(speed);
   const q = quote.data;
   const eta = useQuery({
     queryKey: ["eta", form.pincode],
@@ -144,11 +142,6 @@ export function CheckoutPage() {
     enabled: step > 1 && /^\d{6}$/.test(form.pincode),
     staleTime: Infinity,
   });
-
-  // Offer only what the server supports (COD only when Razorpay keys are absent).
-  useEffect(() => {
-    if (q && !q.paymentMethods.includes(method)) setMethod(q.paymentMethods[0] ?? "cod");
-  }, [q, method]);
 
   const set = (key: FieldKey) => (value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -166,7 +159,6 @@ export function CheckoutPage() {
     `/order/${o.orderNumber}?token=${encodeURIComponent(o.trackToken)}${paid ? "&paid=1" : ""}`;
 
   async function pay(order: CreateOrderResponse) {
-    if (!order.razorpay) return;
     setMessage(null);
     const result = await openRazorpay(order.razorpay, {
       orderNumber: order.orderNumber,
@@ -208,13 +200,7 @@ export function CheckoutPage() {
           state: form.state as (typeof INDIAN_STATES)[number],
         },
         shippingSpeed: speed,
-        paymentMethod: method,
       });
-      if (order.status === "placed") {
-        clearCart();
-        navigate(orderLink(order), { replace: true });
-        return;
-      }
       setCreated(order);
       await pay(order);
     } catch (err) {
@@ -426,38 +412,17 @@ export function CheckoutPage() {
           </Step>
 
           <Step n={3} title="Payment" active={step === 3} done={false}>
-            <div className="opts" role="radiogroup" aria-label="Payment method">
-              {q?.paymentMethods.includes("razorpay") && (
-                <label className="opt">
-                  <input
-                    type="radio"
-                    name="pay"
-                    disabled={locked}
-                    checked={method === "razorpay"}
-                    onChange={() => setMethod("razorpay")}
-                  />
-                  <span className="t">
-                    <b>Pay online</b>
-                    <span>UPI, cards and netbanking on Razorpay&rsquo;s secure page</span>
-                  </span>
-                  <span />
-                </label>
-              )}
-              <label className="opt">
-                <input
-                  type="radio"
-                  name="pay"
-                  disabled={locked}
-                  checked={method === "cod"}
-                  onChange={() => setMethod("cod")}
-                />
-                <span className="t">
-                  <b>Cash on delivery</b>
-                  <span>Pay the courier when it arrives</span>
-                </span>
-                <span className="pr">{pricing ? `+${formatINR(pricing.codFeePaise)}` : ""}</span>
-              </label>
+            <div className="opt pay-online">
+              <span className="lock" aria-hidden="true" />
+              <span className="t">
+                <b>Pay online</b>
+                <span>UPI, cards and netbanking on Razorpay&rsquo;s secure page</span>
+              </span>
+              <span />
             </div>
+            {q && !q.onlinePaymentAvailable && (
+              <p className="msg no">Online payment is not available right now. Please try again later.</p>
+            )}
             {created && (
               <p className="note">
                 Order <b>{created.orderNumber}</b> is waiting for payment.
@@ -470,16 +435,14 @@ export function CheckoutPage() {
               <button
                 className="btn"
                 type="button"
-                disabled={busy || !q || !q.allAvailable || quote.isFetching}
+                disabled={busy || !q || !q.allAvailable || !q.onlinePaymentAvailable || quote.isFetching}
                 onClick={() => void placeOrder()}
               >
                 {busy
                   ? "Working…"
                   : created
                     ? "Try payment again"
-                    : method === "cod"
-                      ? "Place order"
-                      : `Pay ${q ? formatINR(q.totals.totalPaise) : ""}`}
+                    : `Pay ${q ? formatINR(q.totals.totalPaise) : ""}`}
               </button>
             </div>
           </Step>
@@ -515,12 +478,6 @@ export function CheckoutPage() {
                   <span>Delivery</span>
                   <span>{q.totals.shippingPaise ? formatINR(q.totals.shippingPaise) : "Free"}</span>
                 </div>
-                {q.totals.codFeePaise > 0 && (
-                  <div>
-                    <span>Cash on delivery fee</span>
-                    <span>{formatINR(q.totals.codFeePaise)}</span>
-                  </div>
-                )}
                 <div className="t">
                   <span>Total</span>
                   <span>{formatINR(q.totals.totalPaise)}</span>

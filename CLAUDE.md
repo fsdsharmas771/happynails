@@ -26,6 +26,7 @@ Workspace packages export TypeScript source directly (no build step); Vite and `
 ## Rules
 
 - Money is integer paise. Prices, totals, stock and slot availability are decided on the server only.
+- Payment is online through Razorpay only. No cash on delivery (owner decision, 2026-10-04, overriding the build plan).
 - Razorpay: create orders server-side, verify signatures with a timing-safe compare, treat the verified webhook (raw body, idempotent by event id) as the source of truth. Never handle card data or expose `RAZORPAY_KEY_SECRET`.
 - Double booking is prevented by a partial unique index plus Redis holds. Times are Asia/Kolkata in the UI, UTC in storage.
 - No icon libraries, no Tailwind, no component library. Draw shapes with CSS and SVG as in the reference.

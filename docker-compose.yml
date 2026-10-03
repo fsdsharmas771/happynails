@@ -108,6 +108,16 @@ services:
       install:
         condition: service_completed_successfully
 
+  # Opt-in public HTTPS tunnel to the API so Razorpay can deliver webhooks in development.
+  # Start with: docker compose --profile tunnel up -d tunnel, then read the URL from its logs.
+  # Exposes the whole API while running; stop it when you are done testing payments.
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    command: ["tunnel", "--no-autoupdate", "--url", "http://api:4000"]
+    profiles: ["tunnel"]
+    depends_on:
+      - api
+
 volumes:
   mongo_data:
   redis_data:

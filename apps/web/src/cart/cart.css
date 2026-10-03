@@ -280,3 +280,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Single payment route: a static card in the reference's option style, no radio. */
+.opt.pay-online {
+  cursor: default;
+  border-color: var(--gold);
+  background: var(--bg2);
+}
+.opt.pay-online .lock {
+  margin: 4px 3px 0;
+  color: var(--gold);
+}

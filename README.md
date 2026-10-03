@@ -65,7 +65,7 @@ docker/          dev image
 
 ## Payments (Razorpay, test mode)
 
-Without Razorpay keys the API starts normally and offers **cash on delivery only**. To enable online payment locally:
+Online payment through Razorpay is the only way to pay; there is no cash on delivery. Without Razorpay keys the API still starts, but checkout says online payment is unavailable. To enable it locally:
 
 1. In the Razorpay Dashboard, switch to **Test Mode** and generate API keys (Account & Settings > API Keys).
 2. Add to `.env` (never commit it), then `docker compose up -d api` to restart:
@@ -74,12 +74,12 @@ Without Razorpay keys the API starts normally and offers **cash on delivery only
    RAZORPAY_KEY_SECRET=...
    RAZORPAY_WEBHOOK_SECRET=...   # any strong random string; you set the same value in step 4
    ```
-3. Expose the API so Razorpay can reach the webhook. Either tool works:
+3. Expose the API so Razorpay can reach the webhook. The compose file has an opt-in Cloudflare quick tunnel (no account needed):
    ```sh
-   cloudflared tunnel --url http://localhost:4000
-   # or
-   ngrok http 4000
+   docker compose --profile tunnel up -d tunnel
+   docker compose logs tunnel | grep trycloudflare.com   # your public URL
    ```
+   The URL changes every time the tunnel restarts, so update the dashboard webhook when it does. `ngrok http 4000` works too if you have an ngrok account. Stop the tunnel when you are done (`docker compose stop tunnel`); it exposes the whole API.
 4. In the Dashboard (Test Mode) > Webhooks, add `https://<your-tunnel-host>/api/webhooks/razorpay` with the secret from step 2 and the events `payment.captured`, `payment.failed` and `order.paid`.
 5. Place an order with "Pay online" and use Razorpay's [test cards or test UPI ids](https://razorpay.com/docs/payments/payments/test-card-details/). The order page shows "Payment received" straight away and switches to "Thank you" once the webhook lands.
 

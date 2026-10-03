@@ -1,10 +1,4 @@
-import {
-  INDIAN_STATES,
-  ORDER_STATUSES,
-  PAYMENT_METHODS,
-  SHIPPING_SPEEDS,
-  SIZING_OPTION_KEYS,
-} from "@happynails/shared";
+import { INDIAN_STATES, ORDER_STATUSES, SHIPPING_SPEEDS, SIZING_OPTION_KEYS } from "@happynails/shared";
 import { Schema, model, type HydratedDocument, type InferSchemaType } from "mongoose";
 
 const int = { validator: Number.isInteger, message: "{PATH} must be an integer" };
@@ -33,7 +27,7 @@ const paymentSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["pending", "failed", "captured", "cod", "refunded"] as const,
+      enum: ["pending", "failed", "captured", "refunded"] as const,
     },
     razorpayOrderId: String,
     razorpayPaymentId: String,
@@ -64,10 +58,8 @@ const orderSchema = new Schema(
     ],
     subtotalPaise: paise,
     shippingPaise: paise,
-    codFeePaise: paise,
     totalPaise: paise,
     shippingSpeed: { type: String, required: true, enum: SHIPPING_SPEEDS },
-    paymentMethod: { type: String, required: true, enum: PAYMENT_METHODS },
     payment: { type: paymentSchema, required: true },
     status: { type: String, required: true, enum: ORDER_STATUSES },
     /** reserved: held for an unpaid order; committed: sold; released: returned to stock. */

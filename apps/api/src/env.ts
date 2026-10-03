@@ -8,7 +8,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   WEB_ORIGIN: z.url(),
   ADMIN_ORIGIN: z.url(),
-  // Razorpay (test keys locally). All three or none: without them only cash on delivery is offered.
+  // Razorpay (test keys locally). All three or none: without them checkout cannot take payment.
   RAZORPAY_KEY_ID: z
     .string()
     .regex(/^rzp_(test|live)_\w+$/)

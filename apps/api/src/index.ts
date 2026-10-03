@@ -19,7 +19,7 @@ const gateway =
         webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
       })
     : null;
-if (!gateway) logger.warn("Razorpay keys not set: online payment disabled, cash on delivery only");
+if (!gateway) logger.warn("Razorpay keys not set: online payment disabled, so checkout cannot complete");
 
 // Real WhatsApp and email providers arrive behind env flags later; until then messages are logged.
 const jobs = startQueues(env.REDIS_URL, createLogNotifier(logger), logger);

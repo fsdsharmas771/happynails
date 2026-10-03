@@ -36,7 +36,6 @@ function placeOrder(body: Record<string, unknown> = {}) {
       customer,
       address,
       shippingSpeed: "standard",
-      paymentMethod: "razorpay",
       ...body,
     });
 }
@@ -54,7 +53,7 @@ function webhook(event: string, payment: Record<string, unknown>, eventId: strin
 async function pendingOrder() {
   const res = await placeOrder();
   const created = createOrderResponseSchema.parse(res.body);
-  return { ...created, rzpOrderId: created.razorpay!.orderId };
+  return { ...created, rzpOrderId: created.razorpay.orderId };
 }
 
 describe("POST /api/checkout/quote", () => {
@@ -63,25 +62,21 @@ describe("POST /api/checkout/quote", () => {
   it("prices from the database and charges standard delivery under the threshold", async () => {
     const res = await quote({ items: [milk] });
     const q = quoteResponseSchema.parse(res.body);
-    expect(q.totals).toEqual({
-      subtotalPaise: 89900,
-      shippingPaise: 7900,
-      codFeePaise: 0,
-      totalPaise: 97800,
-    });
+    expect(q.totals).toEqual({ subtotalPaise: 89900, shippingPaise: 7900, totalPaise: 97800 });
     expect(q.lines[0]).toMatchObject({ available: true, unitPaise: 89900, product: { name: "Milk Bath" } });
-    expect(q.paymentMethods).toEqual(["razorpay", "cod"]);
+    expect(q.onlinePaymentAvailable).toBe(true);
   });
 
-  it("gives free standard delivery at the threshold, charges express and COD", async () => {
+  it("gives free standard delivery at the threshold but always charges express", async () => {
     expect((await quote({ items: [rose] })).body.totals.shippingPaise).toBe(0);
-    const q = (await quote({ items: [rose], shippingSpeed: "express", paymentMethod: "cod" })).body;
-    expect(q.totals).toEqual({
-      subtotalPaise: 149900,
-      shippingPaise: 14900,
-      codFeePaise: 4900,
-      totalPaise: 169700,
-    });
+    const q = (await quote({ items: [rose], shippingSpeed: "express" })).body;
+    expect(q.totals).toEqual({ subtotalPaise: 149900, shippingPaise: 14900, totalPaise: 164800 });
+  });
+
+  it("has no cash on delivery: a paymentMethod field is ignored and no COD fee exists", async () => {
+    const q = (await quote({ items: [milk], paymentMethod: "cod" })).body;
+    expect(q.totals).toEqual({ subtotalPaise: 89900, shippingPaise: 7900, totalPaise: 97800 });
+    expect(JSON.stringify(q)).not.toMatch(/"cod/i);
   });
 
   it("adds the custom-fit fee and merges duplicate lines", async () => {
@@ -125,27 +120,13 @@ describe("POST /api/checkout/quote", () => {
     expect((await quote({ items: [] })).status).toBe(400);
   });
 
-  it("offers only COD without Razorpay keys", async () => {
+  it("reports online payment unavailable without Razorpay keys", async () => {
     app = testApp({ gateway: null, jobs });
-    expect((await quote({ items: [milk] })).body.paymentMethods).toEqual(["cod"]);
+    expect((await quote({ items: [milk] })).body.onlinePaymentAvailable).toBe(false);
   });
 });
 
 describe("POST /api/orders", () => {
-  it("places a COD order immediately, takes stock and notifies", async () => {
-    const res = await placeOrder({ paymentMethod: "cod", items: [{ ...rose, qty: 2 }] });
-    expect(res.status).toBe(201);
-    const body = createOrderResponseSchema.parse(res.body);
-    expect(body).toMatchObject({ status: "placed", totalPaise: 299800 + 4900 });
-    expect(body.orderNumber).toMatch(/^HN\d{2}\d{4}$/);
-    expect(body.razorpay).toBeUndefined();
-    expect(await stockOf("rose-chrome")).toBe(18);
-    expect(jobs.notified).toEqual([{ type: "order_placed", orderId: expect.any(String) }]);
-    const order = await Order.findOne({ number: body.orderNumber }).lean();
-    expect(order).toMatchObject({ stockState: "committed", payment: { status: "cod" } });
-    expect(order!.trackTokenHash).not.toBe(body.trackToken);
-  });
-
   it("creates a Razorpay order for the server total, reserves stock and schedules expiry", async () => {
     const res = await placeOrder({ items: [milk], shippingSpeed: "express" });
     expect(res.status).toBe(201);
@@ -162,21 +143,33 @@ describe("POST /api/orders", () => {
     expect(jobs.expiries).toEqual([{ orderId: expect.any(String), delayMs: 30 * 60 * 1000 }]);
     expect(jobs.notified).toEqual([]);
     expect(JSON.stringify(res.body)).not.toContain("test_key_secret");
+    expect(body.orderNumber).toMatch(/^HN\d{2}\d{4}$/);
+    const order = await Order.findOne({ number: body.orderNumber }).lean();
+    expect(order).toMatchObject({
+      status: "pending_payment",
+      stockState: "reserved",
+      payment: { status: "pending" },
+    });
+    expect(order!.trackTokenHash).not.toBe(body.trackToken);
+  });
+
+  it("ignores a paymentMethod of cod and still requires online payment", async () => {
+    const res = await placeOrder({ paymentMethod: "cod" });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ status: "pending_payment", razorpay: { amount: 149900 } });
+    expect(jobs.notified).toEqual([]);
   });
 
   it("gives sequential order numbers", async () => {
-    const a = (await placeOrder({ paymentMethod: "cod" })).body.orderNumber as string;
-    const b = (await placeOrder({ paymentMethod: "cod" })).body.orderNumber as string;
+    const a = (await placeOrder()).body.orderNumber as string;
+    const b = (await placeOrder()).body.orderNumber as string;
     expect(Number(b.slice(-4))).toBe(Number(a.slice(-4)) + 1);
   });
 
   it("takes no stock at all when one set runs out mid-order", async () => {
     await Product.updateOne({ slug: "milk-bath" }, { stock: 1 });
     // Quote sees enough stock, then a parallel buyer takes the last one before our transaction.
-    const [a, b] = await Promise.all([
-      placeOrder({ paymentMethod: "cod", items: [rose, milk] }),
-      placeOrder({ paymentMethod: "cod", items: [milk] }),
-    ]);
+    const [a, b] = await Promise.all([placeOrder({ items: [rose, milk] }), placeOrder({ items: [milk] })]);
     const statuses = [a.status, b.status].sort();
     expect(statuses).toEqual([201, 409]);
     expect(await stockOf("milk-bath")).toBe(0);
@@ -202,10 +195,13 @@ describe("POST /api/orders", () => {
     expect(paths).toEqual(expect.arrayContaining(["customer.phone", "address.state"]));
   });
 
-  it("returns 503 for Razorpay when keys are missing, but COD still works", async () => {
+  it("returns 503 without Razorpay keys and takes no stock", async () => {
     app = testApp({ gateway: null, jobs });
-    expect((await placeOrder()).status).toBe(503);
-    expect((await placeOrder({ paymentMethod: "cod" })).status).toBe(201);
+    const res = await placeOrder();
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe("PAYMENTS_UNAVAILABLE");
+    expect(await stockOf("rose-chrome")).toBe(20);
+    expect(await Order.countDocuments()).toBe(0);
   });
 
   it("releases stock and cancels when the gateway fails", async () => {

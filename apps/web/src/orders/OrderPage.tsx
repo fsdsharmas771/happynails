@@ -68,12 +68,6 @@ function Totals({ order }: { order: TrackedOrder }) {
         <span>Delivery</span>
         <span>{t.shippingPaise ? formatINR(t.shippingPaise) : "Free"}</span>
       </div>
-      {t.codFeePaise > 0 && (
-        <div>
-          <span>Cash on delivery fee</span>
-          <span>{formatINR(t.codFeePaise)}</span>
-        </div>
-      )}
       <div className="t">
         <span>Total</span>
         <span>{formatINR(t.totalPaise)}</span>
@@ -231,12 +225,12 @@ export function OrderPage() {
           </Link>
         </div>
         <aside className="panel sum" aria-label="Order summary">
-          <h4>{o.paymentMethod === "cod" ? "Cash on delivery" : "Paid online"}</h4>
+          <h4>{o.paymentStatus === "captured" ? "Paid online" : "Payment"}</h4>
           <p className="note">
-            {o.paymentMethod === "cod"
-              ? "Pay the courier when your order arrives."
-              : o.paymentStatus === "captured"
-                ? "Paid on Razorpay's secure page."
+            {o.paymentStatus === "captured"
+              ? "Paid on Razorpay's secure page."
+              : o.paymentStatus === "refunded"
+                ? "Refunded to your original payment method."
                 : "Payment is handled on Razorpay's secure page."}
           </p>
           <Totals order={o} />

@@ -1,31 +1,18 @@
-import type {
-  CartItem,
-  PaymentMethod,
-  QuoteLine,
-  QuoteResponse,
-  ShippingSpeed,
-  Totals,
-} from "@happynails/shared";
+import type { CartItem, QuoteLine, QuoteResponse, ShippingSpeed, Totals } from "@happynails/shared";
 import type { Types } from "mongoose";
 import { SIZING_OPTIONS } from "../config/catalogue";
 import { PRICING } from "../config/checkout";
 import { Product } from "../models/Product";
 
-/** Delivery and COD charges for a subtotal. Pure, so the rules are easy to test. */
-export function computeTotals(subtotalPaise: number, speed: ShippingSpeed, method: PaymentMethod): Totals {
+/** Delivery charge for a subtotal. Pure, so the rules are easy to test. */
+export function computeTotals(subtotalPaise: number, speed: ShippingSpeed): Totals {
   const shippingPaise =
     speed === "express"
       ? PRICING.expressShippingPaise
       : subtotalPaise >= PRICING.freeShippingThresholdPaise
         ? 0
         : PRICING.standardShippingPaise;
-  const codFeePaise = method === "cod" ? PRICING.codFeePaise : 0;
-  return {
-    subtotalPaise,
-    shippingPaise,
-    codFeePaise,
-    totalPaise: subtotalPaise + shippingPaise + codFeePaise,
-  };
+  return { subtotalPaise, shippingPaise, totalPaise: subtotalPaise + shippingPaise };
 }
 
 /** Same set and option twice in one request become one line. */
@@ -50,11 +37,7 @@ export interface PricedCart {
 }
 
 /** Prices a cart from the database. Unavailable lines are flagged and left out of the totals. */
-export async function priceCart(
-  items: CartItem[],
-  speed: ShippingSpeed,
-  method: PaymentMethod,
-): Promise<PricedCart> {
+export async function priceCart(items: CartItem[], speed: ShippingSpeed): Promise<PricedCart> {
   const wanted = mergeLines(items);
   const products = await Product.find({ slug: { $in: [...new Set(wanted.map((i) => i.slug))] } }).lean();
   const bySlug = new Map(products.map((p) => [p.slug, p]));
@@ -94,17 +77,17 @@ export async function priceCart(
   const subtotal = lines.filter((l) => l.available).reduce((s, l) => s + l.linePaise, 0);
   return {
     lines,
-    totals: computeTotals(subtotal, speed, method),
+    totals: computeTotals(subtotal, speed),
     allAvailable: lines.every((l) => l.available),
   };
 }
 
-export function toQuoteResponse(cart: PricedCart, paymentMethods: PaymentMethod[]): QuoteResponse {
+export function toQuoteResponse(cart: PricedCart, onlinePaymentAvailable: boolean): QuoteResponse {
   return {
     lines: cart.lines.map(({ productId: _id, ...line }) => line),
     totals: cart.totals,
     allAvailable: cart.allAvailable,
     pricing: { ...PRICING },
-    paymentMethods,
+    onlinePaymentAvailable,
   };
 }

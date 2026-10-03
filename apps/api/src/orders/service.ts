@@ -73,11 +73,9 @@ function checkoutFor(order: OrderDoc, gateway: PaymentGateway) {
 
 export async function createOrder(input: CreateOrderRequest, deps: OrderDeps): Promise<CreateOrderResponse> {
   const { gateway, jobs, log } = deps;
-  if (input.paymentMethod === "razorpay" && !gateway) {
-    throw new HttpError(503, "PAYMENTS_UNAVAILABLE", "Online payment is not available right now");
-  }
+  if (!gateway) throw new HttpError(503, "PAYMENTS_UNAVAILABLE", "Online payment is not available right now");
 
-  const cart = await priceCart(input.items, input.shippingSpeed, input.paymentMethod);
+  const cart = await priceCart(input.items, input.shippingSpeed);
   if (!cart.allAvailable) {
     throw new HttpError(409, "ITEMS_UNAVAILABLE", "Some sets in your bag are no longer available", {
       slugs: cart.lines.filter((l) => !l.available).map((l) => l.slug),
@@ -86,9 +84,7 @@ export async function createOrder(input: CreateOrderRequest, deps: OrderDeps): P
 
   const number = await nextOrderNumber();
   const trackToken = randomBytes(24).toString("base64url");
-  const cod = input.paymentMethod === "cod";
   const now = new Date();
-  const status = cod ? "placed" : "pending_payment";
 
   let order!: OrderDoc;
   await mongoose.connection.transaction(async (session) => {
@@ -110,13 +106,12 @@ export async function createOrder(input: CreateOrderRequest, deps: OrderDeps): P
           })),
           ...cart.totals,
           shippingSpeed: input.shippingSpeed,
-          paymentMethod: input.paymentMethod,
-          payment: { status: cod ? "cod" : "pending" },
-          status,
-          stockState: cod ? "committed" : "reserved",
+          payment: { status: "pending" },
+          status: "pending_payment",
+          stockState: "reserved",
           trackTokenHash: sha256(trackToken),
           deliveryDays: deliveryEstimate(input.address.pincode)?.standardDays,
-          events: [{ status, at: now }],
+          events: [{ status: "pending_payment", at: now }],
         },
       ],
       { session },
@@ -124,15 +119,8 @@ export async function createOrder(input: CreateOrderRequest, deps: OrderDeps): P
     order = created[0]!;
   });
 
-  if (cod) {
-    await jobs.notify({ type: "order_placed", orderId: order.id }).catch((err) => {
-      log.error({ err, order: number }, "could not enqueue order notification");
-    });
-    return { orderNumber: number, trackToken, status: "placed", totalPaise: order.totalPaise };
-  }
-
   try {
-    const rzp = await gateway!.createOrder({
+    const rzp = await gateway.createOrder({
       amountPaise: order.totalPaise,
       receipt: number,
       notes: { orderId: order.id, orderNumber: number },
@@ -154,7 +142,7 @@ export async function createOrder(input: CreateOrderRequest, deps: OrderDeps): P
     trackToken,
     status: "pending_payment",
     totalPaise: order.totalPaise,
-    razorpay: checkoutFor(order, gateway!),
+    razorpay: checkoutFor(order, gateway),
   };
 }
 
@@ -199,7 +187,6 @@ export function toTrackedOrder(o: OrderDoc): TrackedOrder {
     firstName: o.customer.name.split(/\s+/)[0] ?? "",
     city: o.address.city,
     placedAt: o.createdAt.toISOString(),
-    paymentMethod: o.paymentMethod,
     paymentStatus: o.payment.status,
     shippingSpeed: o.shippingSpeed,
     items: o.items.map((i) => ({
@@ -208,12 +195,7 @@ export function toTrackedOrder(o: OrderDoc): TrackedOrder {
       qty: i.qty,
       linePaise: i.unitPaise * i.qty,
     })),
-    totals: {
-      subtotalPaise: o.subtotalPaise,
-      shippingPaise: o.shippingPaise,
-      codFeePaise: o.codFeePaise,
-      totalPaise: o.totalPaise,
-    },
+    totals: { subtotalPaise: o.subtotalPaise, shippingPaise: o.shippingPaise, totalPaise: o.totalPaise },
     ...(o.tracking?.awb || o.tracking?.url
       ? {
           tracking: {

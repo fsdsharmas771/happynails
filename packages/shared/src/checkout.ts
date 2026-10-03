@@ -6,10 +6,6 @@ export const SHIPPING_SPEEDS = ["standard", "express"] as const;
 export const shippingSpeedSchema = z.enum(SHIPPING_SPEEDS);
 export type ShippingSpeed = z.infer<typeof shippingSpeedSchema>;
 
-export const PAYMENT_METHODS = ["razorpay", "cod"] as const;
-export const paymentMethodSchema = z.enum(PAYMENT_METHODS);
-export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
-
 export const MAX_CART_LINES = 20;
 
 const paise = z.number().int().nonnegative();
@@ -17,7 +13,6 @@ const paise = z.number().int().nonnegative();
 export const quoteRequestSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(MAX_CART_LINES),
   shippingSpeed: shippingSpeedSchema.default("standard"),
-  paymentMethod: paymentMethodSchema.default("razorpay"),
 });
 export type QuoteRequest = z.input<typeof quoteRequestSchema>;
 
@@ -47,7 +42,6 @@ export type QuoteLine = z.infer<typeof quoteLineSchema>;
 export const totalsSchema = z.object({
   subtotalPaise: paise,
   shippingPaise: paise,
-  codFeePaise: paise,
   totalPaise: paise,
 });
 export type Totals = z.infer<typeof totalsSchema>;
@@ -61,9 +55,9 @@ export const quoteResponseSchema = z.object({
     freeShippingThresholdPaise: paise,
     standardShippingPaise: paise,
     expressShippingPaise: paise,
-    codFeePaise: paise,
   }),
-  paymentMethods: z.array(paymentMethodSchema),
+  /** False when the server has no Razorpay keys; checkout cannot complete without them. */
+  onlinePaymentAvailable: z.boolean(),
 });
 export type QuoteResponse = z.infer<typeof quoteResponseSchema>;
 
@@ -127,7 +121,6 @@ export const createOrderRequestSchema = z.object({
   customer: customerSchema,
   address: addressSchema,
   shippingSpeed: shippingSpeedSchema,
-  paymentMethod: paymentMethodSchema,
 });
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>;
 
@@ -142,10 +135,10 @@ export type RazorpayCheckout = z.infer<typeof razorpayCheckoutSchema>;
 export const createOrderResponseSchema = z.object({
   orderNumber: z.string(),
   trackToken: z.string(),
-  status: z.enum(["pending_payment", "placed"]),
+  status: z.literal("pending_payment"),
   totalPaise: paise,
-  /** Present for Razorpay orders: what Checkout needs to open. */
-  razorpay: razorpayCheckoutSchema.optional(),
+  /** What Razorpay Checkout needs to open. */
+  razorpay: razorpayCheckoutSchema,
 });
 export type CreateOrderResponse = z.infer<typeof createOrderResponseSchema>;
 
@@ -181,8 +174,7 @@ export const trackedOrderSchema = z.object({
   firstName: z.string(),
   city: z.string(),
   placedAt: z.string(),
-  paymentMethod: paymentMethodSchema,
-  paymentStatus: z.enum(["pending", "failed", "captured", "cod", "refunded"]),
+  paymentStatus: z.enum(["pending", "failed", "captured", "refunded"]),
   shippingSpeed: shippingSpeedSchema,
   items: z.array(
     z.object({
