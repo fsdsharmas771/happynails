@@ -247,3 +247,42 @@
     bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* Panels and summaries shared by booking and checkout. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: clamp(20px, 3vw, 36px);
+  transition: background 0.5s;
+}
+.sum {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sum h4 {
+  font-size: calc(26px * var(--hs));
+}
+.frm2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.ref {
+  font-family: var(--display);
+  font-size: calc(30px * var(--hs));
+  color: var(--gold);
+}
+@media (max-width: 960px) {
+  .sum {
+    position: static;
+  }
+}
+@media (max-width: 560px) {
+  .frm2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,276 @@
+/* Home-visit booking, ported from docs/design-reference.html (class names kept). */
+.book {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 44px);
+  align-items: start;
+}
+.stepper {
+  display: flex;
+  gap: 0;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+.stepper button {
+  flex: 1;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 10px 4px 14px;
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stepper button i {
+  font-style: normal;
+  font-family: var(--display);
+  font-size: calc(22px * var(--hs));
+  letter-spacing: 0;
+  color: var(--muted);
+  text-transform: none;
+  font-weight: 400;
+}
+.stepper button[aria-current="step"] {
+  color: var(--fg);
+  border-color: var(--gold);
+}
+.stepper button[aria-current="step"] i {
+  color: var(--gold);
+}
+.stepper button[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+.bp {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.bp h3 {
+  font-size: calc(30px * var(--hs));
+}
+.seg {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.cal-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cal-h h4 {
+  font-size: calc(24px * var(--hs));
+}
+.cal-h div {
+  display: flex;
+  gap: 6px;
+}
+.sq {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 50%;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+}
+.sq:hover:not([disabled]) {
+  border-color: var(--fg);
+}
+.sq[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+/* Drawn chevrons instead of arrow glyphs. */
+.sq::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-top: 1.5px solid currentColor;
+  border-left: 1.5px solid currentColor;
+}
+.sq.prev::before {
+  transform: translateX(2px) rotate(-45deg);
+}
+.sq.next::before {
+  transform: translateX(-2px) rotate(135deg);
+}
+.dow,
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.dow span {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.day {
+  aspect-ratio: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 13px;
+  position: relative;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.25s,
+    border-color 0.25s;
+}
+.day:hover:not([disabled]) {
+  border-color: var(--fg);
+}
+.day[disabled] {
+  opacity: 0.28;
+  cursor: not-allowed;
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px);
+}
+.day.few::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.day.today {
+  border-color: var(--gold);
+}
+.day[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+.day.blank {
+  border: 0;
+  pointer-events: none;
+  background: none;
+}
+.days[aria-busy="true"] {
+  opacity: 0.6;
+}
+.slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.slot {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: var(--rb);
+  padding: 9px 18px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.slot:hover:not([disabled]) {
+  border-color: var(--fg);
+}
+.slot[disabled] {
+  opacity: 0.35;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.slot[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accentfg);
+}
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.legend i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.lbl.bad {
+  color: var(--err);
+}
+.sum dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  font-size: 13px;
+}
+.sum dt {
+  color: var(--muted);
+}
+.sum dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 500;
+}
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.total b {
+  font-family: var(--display);
+  font-size: calc(34px * var(--hs));
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.done h3 {
+  font-size: calc(36px * var(--hs));
+}
+.sum {
+  top: 90px;
+}
+
+@media (max-width: 960px) {
+  .book {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .stepper button {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .day {
+    font-size: 12px;
+  }
+}

@@ -13,6 +13,7 @@ import { LineThumb } from "../cart/LineThumb";
 import { useCart } from "../cart/store";
 import { useQuote } from "../cart/useQuote";
 import { ApiError, api } from "../lib/api";
+import { normalizeMobile } from "../lib/phone";
 import { openRazorpay } from "../lib/razorpay";
 import "../cart/cart.css";
 import "../layout/overlays.css";
@@ -20,14 +21,6 @@ import "../layout/overlays.css";
 type FieldKey = "name" | "phone" | "email" | "line" | "pincode" | "city" | "state";
 type Form = Record<FieldKey, string>;
 const EMPTY: Form = { name: "", phone: "", email: "", line: "", pincode: "", city: "", state: "" };
-
-/** Accepts pasted "+91 98765 43210" or "098765 43210" and keeps the 10-digit number. */
-function normalizeMobile(raw: string): string {
-  let d = raw.replace(/\D/g, "");
-  if (d.length > 10 && d.startsWith("91")) d = d.slice(2);
-  else if (d.length > 10 && d.startsWith("0")) d = d.slice(1);
-  return d.slice(0, 10);
-}
 
 function validate(form: Form): Partial<Record<FieldKey, string>> {
   const errors: Partial<Record<FieldKey, string>> = {};

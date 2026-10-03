@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { formatIstTime, istDateOf, istTimeOf, type VisitCity } from "@happynails/shared";
 import { NailArt } from "@happynails/ui";
 import { SectionLink } from "../layout/Nav";
+import { api } from "../lib/api";
+import { formatIstDate } from "../lib/dates";
 import { prefersReducedMotion } from "../lib/motion";
 import "./hero.css";
 
@@ -17,6 +21,33 @@ const MARQUEE_WORDS = [
   "Delhi NCR visits",
   "Shipped across India",
 ];
+
+/** The real next open home-visit slot, from the booking engine. */
+function NextSlot({ city }: { city: VisitCity }) {
+  const next = useQuery({
+    queryKey: ["nextSlot", city],
+    queryFn: () => api.nextSlot(city),
+    staleTime: 60_000,
+  });
+  const at = next.data?.startsAt ? new Date(next.data.startsAt) : null;
+  return (
+    <div className="nextslot" aria-live="polite">
+      <span className="pulse" />
+      {next.isPending ? (
+        <span>Checking the calendar</span>
+      ) : at ? (
+        <span>
+          Next home visit in {city}:{" "}
+          <b>
+            {formatIstDate(istDateOf(at))}, {formatIstTime(istTimeOf(at))}
+          </b>
+        </span>
+      ) : (
+        <span>Home visit slots open soon</span>
+      )}
+    </div>
+  );
+}
 
 export function Hero() {
   const setRef = useRef<HTMLDivElement>(null);
@@ -63,11 +94,7 @@ export function Hero() {
             Book a home visit
           </SectionLink>
         </div>
-        <div className="nextslot">
-          <span className="pulse" />
-          {/* Shows the next real open slot once availability exists (phase 5). */}
-          <span>Home visit slots open soon</span>
-        </div>
+        <NextSlot city="Delhi" />
       </div>
       <div className="hero-art">
         <svg className="ring" viewBox="0 0 600 600" aria-hidden="true">

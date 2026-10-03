@@ -8,6 +8,9 @@ export const SITE = {
   name: "Happy Nails",
   byline: "by Anamika",
   visitCities: VISIT_CITIES,
+  // From the build plan (bookings are paid after the visit) plus the prototype's travel line.
+  // PLACEHOLDER: "Travel is included within Delhi NCR" is not confirmed by the owner.
+  bookingPaymentNote: "Pay after your visit by UPI or cash. Travel is included within Delhi NCR.",
   contact: {
     // PLACEHOLDER: real WhatsApp number not provided yet.
     whatsappDisplay: "+91 00000 00000",

@@ -1,5 +1,14 @@
 import {
+  availabilityResponseSchema,
+  bookingConfirmationSchema,
   createOrderResponseSchema,
+  holdResponseSchema,
+  nextSlotResponseSchema,
+  pincodeCheckResponseSchema,
+  servicesResponseSchema,
+  type CreateBookingRequest,
+  type HoldRequest,
+  type VisitCity,
   etaResponseSchema,
   productDetailResponseSchema,
   productListResponseSchema,
@@ -31,14 +40,14 @@ interface Parser<T> {
 async function request<T>(
   path: string,
   schema: Parser<T>,
-  init?: { method: "POST"; body: unknown },
+  init?: { method: "POST" | "DELETE"; body?: unknown },
 ): Promise<T> {
   const res = await fetch(`/api${path}`, {
     method: init?.method ?? "GET",
-    headers: { Accept: "application/json", ...(init ? { "Content-Type": "application/json" } : {}) },
-    ...(init ? { body: JSON.stringify(init.body) } : {}),
+    headers: { Accept: "application/json", ...(init?.body ? { "Content-Type": "application/json" } : {}) },
+    ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
   });
-  const body: unknown = await res.json().catch(() => null);
+  const body: unknown = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     const err = (body as { error?: { code?: string; message?: string } } | null)?.error;
     throw new ApiError(res.status, err?.code ?? `HTTP_${res.status}`, err?.message ?? res.statusText);
@@ -70,4 +79,24 @@ export const api = {
       method: "POST",
       body,
     }),
+  services: () => request("/services", servicesResponseSchema),
+  availability: (q: { city: VisitCity; serviceId: string; addonIds: string[]; month: string }) =>
+    request(
+      `/availability?${new URLSearchParams({
+        city: q.city,
+        serviceId: q.serviceId,
+        month: q.month,
+        ...(q.addonIds.length ? { addonIds: q.addonIds.join(",") } : {}),
+      })}`,
+      availabilityResponseSchema,
+    ),
+  nextSlot: (city: VisitCity) =>
+    request(`/availability/next?city=${encodeURIComponent(city)}`, nextSlotResponseSchema),
+  checkPincode: (pincode: string) =>
+    request("/pincode/check", pincodeCheckResponseSchema, { method: "POST", body: { pincode } }),
+  holdSlot: (body: HoldRequest) => request("/bookings/hold", holdResponseSchema, { method: "POST", body }),
+  releaseHold: (token: string) =>
+    request(`/bookings/hold/${encodeURIComponent(token)}`, { parse: () => undefined }, { method: "DELETE" }),
+  createBooking: (body: CreateBookingRequest) =>
+    request("/bookings", bookingConfirmationSchema, { method: "POST", body }),
 };
