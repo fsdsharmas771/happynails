@@ -14,7 +14,9 @@ import {
   productListResponseSchema,
   quoteResponseSchema,
   razorpayCheckoutSchema,
+  trackedBookingSchema,
   trackedOrderSchema,
+  type BookingAccess,
   type CreateOrderRequest,
   type OrderAccess,
   type QuoteRequest,
@@ -99,4 +101,22 @@ export const api = {
     request(`/bookings/hold/${encodeURIComponent(token)}`, { parse: () => undefined }, { method: "DELETE" }),
   createBooking: (body: CreateBookingRequest) =>
     request("/bookings", bookingConfirmationSchema, { method: "POST", body }),
+  trackBooking: ({ number, token }: BookingAccess) =>
+    request(
+      `/bookings/track?number=${encodeURIComponent(number)}&token=${encodeURIComponent(token)}`,
+      trackedBookingSchema,
+    ),
+  resumeBookingPayment: (body: BookingAccess) =>
+    request("/bookings/pay", z.object({ number: z.string(), razorpay: razorpayCheckoutSchema }), {
+      method: "POST",
+      body,
+    }),
+  payBookingLater: (body: BookingAccess) =>
+    request("/bookings/pay-later", trackedBookingSchema, { method: "POST", body }),
+  verifyBookingPayment: (body: {
+    number: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => request("/bookings/verify-payment", z.object({ verified: z.boolean() }), { method: "POST", body }),
 };

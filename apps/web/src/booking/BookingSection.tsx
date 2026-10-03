@@ -13,7 +13,9 @@ import {
   istWeekday,
   VISIT_CITIES,
   type BookingConfirmation,
+  type BookingPaymentMethod,
   type HoldResponse,
+  type RazorpayCheckout,
   type IstDate,
   type Slot,
   type VisitCity,
@@ -23,6 +25,7 @@ import { ApiError, api } from "../lib/api";
 import { formatIstDate } from "../lib/dates";
 import { scrollToSection } from "../lib/motion";
 import { normalizeMobile } from "../lib/phone";
+import { openRazorpay } from "../lib/razorpay";
 import { useReveal } from "../lib/useReveal";
 import "./booking.css";
 
@@ -125,6 +128,23 @@ export function BookingSection() {
   const [submitting, setSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [done, setDone] = useState<BookingConfirmation | null>(null);
+  const [payMethod, setPayMethod] = useState<BookingPaymentMethod>("online");
+  /** A booking created for online payment that has not been paid yet. */
+  const [unpaid, setUnpaid] = useState<BookingConfirmation | null>(null);
+  const [payMsg, setPayMsg] = useState<string | null>(null);
+
+  // After paying, the webhook confirms the visit; poll briefly so the page can say so.
+  const confirming = done?.status === "pending_payment";
+  const tracked = useQuery({
+    queryKey: ["booking", done?.number],
+    queryFn: () => api.trackBooking({ number: done!.number, token: done!.trackToken }),
+    enabled: confirming,
+    refetchInterval: (q) => (q.state.dataUpdateCount < 20 ? 3000 : false),
+  });
+  useEffect(() => {
+    if (tracked.data && tracked.data.status !== "pending_payment")
+      setDone((d) => (d ? { ...d, ...tracked.data } : d));
+  }, [tracked.data]);
 
   // Default to the first service once the list arrives.
   useEffect(() => {
@@ -240,9 +260,15 @@ export function BookingSection() {
         pincode: pincode.trim(),
         address: details.address.trim(),
         notes: details.notes.trim(),
+        paymentMethod: services.data?.onlinePaymentAvailable ? payMethod : "after_visit",
       });
       setHold(null);
-      setDone(booking);
+      if (booking.razorpay) {
+        setUnpaid(booking);
+        await payOnline(booking, booking.razorpay);
+      } else {
+        setDone(booking);
+      }
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       if (code === "HOLD_EXPIRED" || code === "SLOT_TAKEN") {
@@ -265,8 +291,60 @@ export function BookingSection() {
     }
   }
 
+  /** Opens Razorpay for a booking awaiting payment; on success the webhook confirms the visit. */
+  async function payOnline(b: BookingConfirmation, checkout: RazorpayCheckout) {
+    setPayMsg(null);
+    const result = await openRazorpay(checkout, {
+      orderNumber: b.number,
+      prefill: { name: details.name.trim(), email: "", contact: details.phone },
+    }).catch(() => ({ kind: "failed" as const, reason: "The payment page could not be opened." }));
+    if (result.kind === "success") {
+      await api.verifyBookingPayment({ number: b.number, ...result.response }).catch(() => undefined);
+      setUnpaid(null);
+      setDone({ ...b, paymentStatus: "captured" });
+      return;
+    }
+    setPayMsg(
+      result.kind === "failed"
+        ? `${result.reason} Your time is held for 30 minutes.`
+        : "Payment was not completed. Your time is held for 30 minutes.",
+    );
+  }
+
+  async function retryPayment() {
+    if (!unpaid || submitting) return;
+    setSubmitting(true);
+    try {
+      const { razorpay } = await api.resumeBookingPayment({
+        number: unpaid.number,
+        token: unpaid.trackToken,
+      });
+      await payOnline(unpaid, razorpay);
+    } catch {
+      setPayMsg("This booking can no longer be paid online. Please book again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function switchToPayLater() {
+    if (!unpaid || submitting) return;
+    setSubmitting(true);
+    try {
+      const b = await api.payBookingLater({ number: unpaid.number, token: unpaid.trackToken });
+      setUnpaid(null);
+      setDone({ ...unpaid, ...b });
+    } catch {
+      setPayMsg("This booking could not be updated. Please book again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   function startOver() {
     setDone(null);
+    setUnpaid(null);
+    setPayMsg(null);
     setDate(null);
     setHold(null);
     setSlotMsg(null);
@@ -302,7 +380,7 @@ export function BookingSection() {
       </div>
       <div className="book rv" ref={bodyRef}>
         <div className="panel" ref={panelRef}>
-          {!done && (
+          {!done && !unpaid && (
             <div className="stepper" role="tablist" aria-label="Booking steps">
               {STEP_LABELS.map((label, n) => (
                 <button
@@ -556,7 +634,7 @@ export function BookingSection() {
             </div>
           )}
 
-          {!done && step === 3 && (
+          {!done && !unpaid && step === 3 && (
             <form className="bp" onSubmit={(e) => void confirm(e)} noValidate>
               <h3>Who are we meeting?</h3>
               <div className="frm2">
@@ -604,6 +682,37 @@ export function BookingSection() {
                   />
                 )}
               </Field>
+              <div className="lbl">Payment</div>
+              <div className="opts" role="radiogroup" aria-label="Payment">
+                {services.data?.onlinePaymentAvailable && (
+                  <label className="opt">
+                    <input
+                      type="radio"
+                      name="bpay"
+                      checked={payMethod === "online"}
+                      onChange={() => setPayMethod("online")}
+                    />
+                    <span className="t">
+                      <b>Pay now</b>
+                      <span>UPI, cards and netbanking on Razorpay&rsquo;s secure page</span>
+                    </span>
+                    <span className="pr">{formatINR(total)}</span>
+                  </label>
+                )}
+                <label className="opt">
+                  <input
+                    type="radio"
+                    name="bpay"
+                    checked={payMethod === "after_visit" || !services.data?.onlinePaymentAvailable}
+                    onChange={() => setPayMethod("after_visit")}
+                  />
+                  <span className="t">
+                    <b>Pay after your visit</b>
+                    <span>By UPI or cash, once your nails are done</span>
+                  </span>
+                  <span />
+                </label>
+              </div>
               {hold && holdLeft !== null && (
                 <p className="note">
                   Your time is held for {Math.floor(holdLeft / 60)}:{String(holdLeft % 60).padStart(2, "0")}.
@@ -619,15 +728,48 @@ export function BookingSection() {
                   Back
                 </button>
                 <button className="btn" type="submit" disabled={submitting}>
-                  {submitting ? "Confirming…" : "Confirm booking"}
+                  {submitting
+                    ? "Confirming…"
+                    : payMethod === "online" && services.data?.onlinePaymentAvailable
+                      ? `Confirm and pay ${formatINR(total)}`
+                      : "Confirm booking"}
                 </button>
               </div>
             </form>
           )}
 
+          {!done && unpaid && (
+            <div className="done">
+              <p className="eyebrow">Visit held</p>
+              <h3>Your visit is waiting for payment.</h3>
+              <div className="ref">{unpaid.number}</div>
+              <p role="status" style={{ color: "var(--muted)" }}>
+                {payMsg ?? "Complete the payment to confirm your visit."}
+              </p>
+              <div className="seg">
+                <button
+                  className="btn"
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void retryPayment()}
+                >
+                  Try payment again
+                </button>
+                <button
+                  className="btn ghost"
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void switchToPayLater()}
+                >
+                  Pay after the visit instead
+                </button>
+              </div>
+            </div>
+          )}
+
           {done && (
             <DoneView>
-              <p className="eyebrow">Booking confirmed</p>
+              <p className="eyebrow">{confirming ? "Payment received" : "Booking confirmed"}</p>
               <h3>See you soon, {done.firstName}.</h3>
               <div className="ref">{done.number}</div>
               <p style={{ color: "var(--muted)" }}>
@@ -635,6 +777,13 @@ export function BookingSection() {
                 {done.addonNames.length ? ` with ${done.addonNames.join(", ")}` : ""} on{" "}
                 {formatIstDate(istDateOf(new Date(done.startsAt)), true)} at{" "}
                 {formatIstTime(istTimeOf(new Date(done.startsAt)))}, {done.city}. Keep this reference handy.
+              </p>
+              <p className="note" aria-live="polite">
+                {confirming
+                  ? "We are confirming your payment with the bank. This updates on its own."
+                  : done.paymentStatus === "captured"
+                    ? "Paid online. Nothing to pay at the visit."
+                    : "Pay after your visit by UPI or cash."}
               </p>
               <button className="btn ghost" type="button" onClick={startOver}>
                 Book another visit
