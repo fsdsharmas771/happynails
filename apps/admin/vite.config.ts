@@ -7,6 +7,8 @@ export default defineConfig({
     host: true,
     port: 5174,
     strictPort: true,
+    // Compose service name, so other containers (screenshots, Playwright) can reach the dev server.
+    allowedHosts: ["admin"],
     // Docker Desktop bind mounts do not deliver file events, so poll inside containers.
     watch: process.env.WATCH_POLL === "true" ? { usePolling: true, interval: 300 } : undefined,
     proxy: {
