@@ -1,0 +1,9 @@
+{
+  "watch": ["src", "../../packages/shared/src"],
+  "ext": "ts,json",
+  "ignore": ["**/*.test.ts"],
+  "legacyWatch": true,
+  "pollingInterval": 500,
+  "exec": "tsx src/index.ts",
+  "signal": "SIGTERM"
+}
