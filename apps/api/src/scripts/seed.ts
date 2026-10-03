@@ -1,11 +1,13 @@
-// Idempotent: safe to run repeatedly; never overwrites existing records. The admin owner joins in phase 6.
+// Idempotent: safe to run repeatedly; never overwrites existing records.
 import mongoose from "mongoose";
 import { connectMongo, disconnectMongo } from "../db/mongo";
 import { loadEnv } from "../env";
 import { createLogger } from "../logger";
+import "../models/Admin";
 import "../models/Booking";
 import "../models/Order";
 import "../models/Product";
+import { seedOwner } from "../seed/admin";
 import { seedBookingSetup } from "../seed/bookings";
 import { seedProducts } from "../seed/seedProducts";
 
@@ -17,4 +19,5 @@ await connectMongo(env.MONGO_URL, logger, 3);
 await Promise.all(Object.values(mongoose.models).map((m) => m.init()));
 logger.info(await seedProducts(), "seeded products");
 logger.info(await seedBookingSetup(), "seeded services, add-ons and placeholder technicians");
+logger.info(await seedOwner(env.ADMIN_OWNER_EMAIL, env.ADMIN_OWNER_PASSWORD));
 await disconnectMongo();

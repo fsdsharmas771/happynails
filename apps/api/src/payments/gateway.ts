@@ -9,6 +9,12 @@ export interface GatewayOrder {
 
 /** The slice of the Razorpay SDK we use, so tests can substitute a fake. */
 export interface RazorpayClient {
+  payments: {
+    refund(
+      paymentId: string,
+      input: { amount: number; notes: Record<string, string> },
+    ): Promise<{ id: string; amount: number | string; status: string }>;
+  };
   orders: {
     create(input: {
       amount: number;
@@ -27,6 +33,12 @@ export interface PaymentGateway {
     receipt: string;
     notes: Record<string, string>;
   }): Promise<GatewayOrder>;
+  /** Refunds part or all of a captured payment. */
+  refund(input: { paymentId: string; amountPaise: number; notes: Record<string, string> }): Promise<{
+    id: string;
+    amountPaise: number;
+    status: string;
+  }>;
   /** Checkout callback: HMAC-SHA256 of "order_id|payment_id" with the key secret. */
   verifyPaymentSignature(orderId: string, paymentId: string, signature: string): boolean;
   /** Webhook: HMAC-SHA256 of the raw request body with the webhook secret. */
@@ -59,6 +71,10 @@ export function createRazorpayGateway(config: RazorpayConfig, client?: RazorpayC
     async createOrder({ amountPaise, receipt, notes }) {
       const order = await sdk.orders.create({ amount: amountPaise, currency: "INR", receipt, notes });
       return { id: order.id, amount: Number(order.amount), currency: order.currency };
+    },
+    async refund({ paymentId, amountPaise, notes }) {
+      const r = await sdk.payments.refund(paymentId, { amount: amountPaise, notes });
+      return { id: r.id, amountPaise: Number(r.amount), status: r.status };
     },
     verifyPaymentSignature(orderId, paymentId, signature) {
       return hexDigestMatches(hmacHex(config.keySecret, `${orderId}|${paymentId}`), signature);

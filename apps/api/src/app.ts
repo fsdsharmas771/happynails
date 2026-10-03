@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
@@ -11,6 +12,9 @@ import { checkoutRouter, ordersRouter, paymentsRouter, webhooksRouter } from "./
 import type { OrderDeps } from "./orders/service";
 import type { BookingDeps } from "./bookings/engine";
 import { availabilityRouter, bookingsRouter, pincodeRouter, servicesRouter } from "./routes/bookings";
+import { adminRouter, testimonialsRouter } from "./routes/admin";
+import type { AdminAuthConfig } from "./admin/auth";
+import type { UploadProvider } from "./uploads/provider";
 
 export interface AppDeps {
   logger: Logger;
@@ -18,11 +22,12 @@ export interface AppDeps {
   checks: { mongo: HealthCheck; redis: HealthCheck };
   orders: OrderDeps;
   bookings: BookingDeps;
+  admin: { auth: AdminAuthConfig; uploads: UploadProvider; uploadDir: string };
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
 
-export function createApp({ logger, allowedOrigins, checks, orders, bookings }: AppDeps): Express {
+export function createApp({ logger, allowedOrigins, checks, orders, bookings, admin }: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -45,6 +50,13 @@ export function createApp({ logger, allowedOrigins, checks, orders, bookings }: 
   // Raw-body routes first: the Razorpay webhook signature covers the exact bytes received.
   app.use("/api/webhooks", webhooksRouter(orders));
   app.use(express.json({ limit: "100kb" }));
+  app.use(cookieParser());
+
+  // Uploaded media, under random names. Served by the API in development; a CDN in production.
+  app.use(
+    "/uploads",
+    express.static(admin.uploadDir, { maxAge: "365d", immutable: true, index: false, fallthrough: false }),
+  );
 
   app.use("/api/health", healthRouter(checks));
   app.use("/api/products", productsRouter());
@@ -56,6 +68,8 @@ export function createApp({ logger, allowedOrigins, checks, orders, bookings }: 
   app.use("/api/availability", availabilityRouter(bookings));
   app.use("/api/bookings", bookingsRouter(bookings));
   app.use("/api/pincode", pincodeRouter());
+  app.use("/api/testimonials", testimonialsRouter());
+  app.use("/api/admin", adminRouter({ auth: admin.auth, orders, bookings, uploads: admin.uploads }));
 
   app.use(notFound);
   app.use(errorHandler);

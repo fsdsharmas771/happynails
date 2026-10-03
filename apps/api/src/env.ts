@@ -15,6 +15,11 @@ const envSchema = z.object({
     .optional(),
   RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+  ADMIN_JWT_SECRET: z.string().min(32, "ADMIN_JWT_SECRET must be at least 32 characters"),
+  /** Seed only: the first owner account. */
+  ADMIN_OWNER_EMAIL: z.email().optional(),
+  ADMIN_OWNER_PASSWORD: z.string().min(10).optional(),
+  UPLOAD_DIR: z.string().default("/app/uploads"),
 });
 
 export type Env = z.infer<typeof envSchema>;

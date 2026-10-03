@@ -388,7 +388,7 @@ export async function nextBookingNumber(now = new Date()): Promise<string> {
 }
 
 /** Throws 409 if the technician is busy (with travel time) for this visit; runs inside a transaction. */
-async function assertTechnicianFree(
+export async function assertTechnicianFree(
   techId: string,
   visit: { startsAt: Date; endsAt: Date; city: VisitCity },
   session: ClientSession,

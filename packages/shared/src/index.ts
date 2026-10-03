@@ -8,3 +8,4 @@ export * from "./sizing";
 export * from "./checkout";
 export * from "./time";
 export * from "./booking";
+export * from "./admin";

@@ -1,9 +1,15 @@
 import { createHmac } from "node:crypto";
 import { Redis } from "ioredis";
 import { pino } from "pino";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createApp } from "../app";
+import { createLocalUploadProvider } from "../uploads/provider";
 import type { Jobs, NotificationJob } from "../jobs/types";
 import { createRazorpayGateway, type GatewayOrder, type PaymentGateway } from "../payments/gateway";
+
+export const TEST_ADMIN_SECRET = "test-admin-secret-that-is-long-enough-123";
+export const TEST_UPLOAD_DIR = path.join(tmpdir(), "hn-test-uploads");
 
 export const TEST_RAZORPAY = {
   keyId: "rzp_test_dummy",
@@ -40,8 +46,16 @@ export function fakeJobs(): FakeJobs {
 /** Razorpay gateway with the real signature checks and a fake orders API. */
 export function fakeGateway(opts: { fail?: boolean } = {}) {
   const created: { amount: number; receipt: string; notes: Record<string, string> }[] = [];
+  const refunds: { paymentId: string; amount: number }[] = [];
   let n = 0;
   const gateway = createRazorpayGateway(TEST_RAZORPAY, {
+    payments: {
+      async refund(paymentId, input) {
+        if (opts.fail) throw new Error("gateway down");
+        refunds.push({ paymentId, amount: input.amount });
+        return { id: `rfnd_test${refunds.length}`, amount: input.amount, status: "processed" };
+      },
+    },
     orders: {
       async create(input): Promise<GatewayOrder> {
         if (opts.fail) throw new Error("gateway down");
@@ -50,7 +64,7 @@ export function fakeGateway(opts: { fail?: boolean } = {}) {
       },
     },
   });
-  return { gateway, created };
+  return { gateway, created, refunds };
 }
 
 export interface TestAppOptions {
@@ -84,6 +98,11 @@ export function testApp(opts: TestAppOptions = {}) {
       log: logger,
       ...(opts.keyPrefix ? { keyPrefix: opts.keyPrefix } : {}),
       ...(opts.now ? { now: opts.now } : {}),
+    },
+    admin: {
+      auth: { jwtSecret: TEST_ADMIN_SECRET, secureCookies: false },
+      uploads: createLocalUploadProvider(TEST_UPLOAD_DIR),
+      uploadDir: TEST_UPLOAD_DIR,
     },
   });
 }

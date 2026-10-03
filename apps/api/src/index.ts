@@ -6,6 +6,7 @@ import { createLogNotifier } from "./jobs/notifier";
 import { startQueues } from "./jobs/queues";
 import { createLogger } from "./logger";
 import { createRazorpayGateway } from "./payments/gateway";
+import { createLocalUploadProvider } from "./uploads/provider";
 
 const env = loadEnv();
 const logger = createLogger(env);
@@ -30,6 +31,11 @@ const app = createApp({
   checks: { mongo: pingMongo, redis: () => pingRedis(redis) },
   orders: { gateway, jobs, log: logger },
   bookings: { redis, gateway, jobs, log: logger },
+  admin: {
+    auth: { jwtSecret: env.ADMIN_JWT_SECRET, secureCookies: env.NODE_ENV === "production" },
+    uploads: createLocalUploadProvider(env.UPLOAD_DIR),
+    uploadDir: env.UPLOAD_DIR,
+  },
 });
 
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, "api listening"));

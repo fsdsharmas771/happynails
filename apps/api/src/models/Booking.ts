@@ -121,6 +121,15 @@ const bookingSchema = new Schema(
     payment: { type: bookingPaymentSchema, required: true },
     /** SHA-256 of the customer's access token; the token itself is only shown to them. */
     trackTokenHash: { type: String, required: true },
+    refunds: [
+      {
+        _id: false,
+        razorpayRefundId: { type: String, required: true },
+        amountPaise: { type: Number, required: true, validate: int },
+        reason: String,
+        at: { type: Date, required: true },
+      },
+    ],
     notes: { type: String, default: "" },
     reminderSentAt: Date,
     events: [

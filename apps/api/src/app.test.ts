@@ -17,6 +17,11 @@ function appWith(mongo = up, redis = up) {
     checks: { mongo, redis },
     orders: { gateway: null, jobs: fakeJobs(), log: logger },
     bookings: { redis: new Redis({ lazyConnect: true }), gateway: null, jobs: fakeJobs(), log: logger },
+    admin: {
+      auth: { jwtSecret: "x".repeat(40), secureCookies: false },
+      uploads: { save: async () => ({ url: "" }) },
+      uploadDir: "/tmp",
+    },
   });
 }
 

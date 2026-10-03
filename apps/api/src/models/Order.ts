@@ -67,6 +67,15 @@ const orderSchema = new Schema(
     tracking: { carrier: String, awb: String, url: String },
     /** SHA-256 of the guest tracking token; the token itself is only ever in the customer's link. */
     trackTokenHash: { type: String, required: true },
+    refunds: [
+      {
+        _id: false,
+        razorpayRefundId: { type: String, required: true },
+        amountPaise: { type: Number, required: true, validate: int },
+        reason: String,
+        at: { type: Date, required: true },
+      },
+    ],
     deliveryDays: { type: [Number], default: undefined },
     events: [
       {
