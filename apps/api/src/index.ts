@@ -29,6 +29,7 @@ const app = createApp({
   allowedOrigins: [env.WEB_ORIGIN, env.ADMIN_ORIGIN],
   checks: { mongo: pingMongo, redis: () => pingRedis(redis) },
   orders: { gateway, jobs, log: logger },
+  bookings: { redis, jobs, log: logger },
 });
 
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, "api listening"));

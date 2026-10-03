@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { Redis } from "ioredis";
 import { pino } from "pino";
 import { createApp } from "../app";
 import type { Jobs, NotificationJob } from "../jobs/types";
@@ -46,16 +47,35 @@ export function fakeGateway(opts: { fail?: boolean } = {}) {
   return { gateway, created };
 }
 
-export function testApp(opts: { gateway?: PaymentGateway | null; jobs?: Jobs } = {}) {
+export interface TestAppOptions {
+  gateway?: PaymentGateway | null;
+  jobs?: Jobs;
+  redis?: Redis;
+  keyPrefix?: string;
+  now?: () => Date;
+}
+
+// Never connects: for tests that do not touch booking routes.
+const idleRedis = () => new Redis({ lazyConnect: true });
+
+export function testApp(opts: TestAppOptions = {}) {
   const logger = pino({ level: "silent" });
+  const jobs = opts.jobs ?? fakeJobs();
   return createApp({
     logger,
     allowedOrigins: ["http://localhost:5173"],
     checks: { mongo: async () => true, redis: async () => true },
     orders: {
       gateway: opts.gateway === undefined ? fakeGateway().gateway : opts.gateway,
-      jobs: opts.jobs ?? fakeJobs(),
+      jobs,
       log: logger,
+    },
+    bookings: {
+      redis: opts.redis ?? idleRedis(),
+      jobs,
+      log: logger,
+      ...(opts.keyPrefix ? { keyPrefix: opts.keyPrefix } : {}),
+      ...(opts.now ? { now: opts.now } : {}),
     },
   });
 }

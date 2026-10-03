@@ -1,0 +1,145 @@
+import {
+  addIstDays,
+  availabilityQuerySchema,
+  BOOKING_HORIZON_DAYS,
+  createBookingRequestSchema,
+  daysOfMonth,
+  holdRequestSchema,
+  istDateOf,
+  pincodeCheckRequestSchema,
+  visitCityForPincode,
+  visitCitySchema,
+  type AvailabilityResponse,
+  type ServicesResponse,
+} from "@happynails/shared";
+import { Router } from "express";
+import { z } from "zod";
+import {
+  computeSlots,
+  confirmBooking,
+  loadSelection,
+  placeHold,
+  releaseHold,
+  type BookingDeps,
+} from "../bookings/engine";
+import { Addon, Service } from "../models/Booking";
+
+export function servicesRouter(): Router {
+  const router = Router();
+  router.get("/", async (_req, res) => {
+    const [services, addons] = await Promise.all([
+      Service.find({ active: true }).sort({ sortOrder: 1, name: 1 }).lean(),
+      Addon.find({ active: true }).sort({ sortOrder: 1, name: 1 }).lean(),
+    ]);
+    const body: ServicesResponse = {
+      services: services.map((s) => ({
+        id: String(s._id),
+        name: s.name,
+        description: s.description,
+        minutes: s.minutes,
+        pricePaise: s.pricePaise,
+      })),
+      addons: addons.map((a) => ({
+        id: String(a._id),
+        name: a.name,
+        description: a.description,
+        minutes: a.minutes,
+        pricePaise: a.pricePaise,
+        ...(a.unitNote ? { unitNote: a.unitNote } : {}),
+      })),
+    };
+    res.json(body);
+  });
+  return router;
+}
+
+export function availabilityRouter(deps: BookingDeps): Router {
+  const router = Router();
+
+  router.get("/", async (req, res) => {
+    const q = availabilityQuerySchema.parse(req.query);
+    const { minutes } = await loadSelection(q.serviceId, q.addonIds);
+    const today = istDateOf(deps.now?.() ?? new Date());
+    const last = addIstDays(today, BOOKING_HORIZON_DAYS);
+    // Only days inside the booking window are computed; the rest of the month is simply closed.
+    const all = daysOfMonth(q.month);
+    const dates = all.filter((d) => d >= today && d <= last);
+    const slots = await computeSlots(q.city, minutes, dates, deps);
+    const body: AvailabilityResponse = {
+      month: q.month,
+      city: q.city,
+      minutes,
+      days: all.map((date) => {
+        const list = (slots.get(date) ?? []).map((s) => ({
+          time: s.time,
+          startsAt: s.startsAt.toISOString(),
+          open: s.freeTechIds.length > 0,
+        }));
+        return { date, openCount: list.filter((s) => s.open).length, slots: list };
+      }),
+    };
+    res.set("Cache-Control", "no-store");
+    res.json(body);
+  });
+
+  /** First open slot in a city for the shortest service: the hero's "next home visit" line. */
+  router.get("/next", async (req, res) => {
+    const city = visitCitySchema.parse(req.query.city);
+    const shortest = await Service.findOne({ active: true }).sort({ minutes: 1 }).lean();
+    let startsAt: string | null = null;
+    if (shortest) {
+      const today = istDateOf(deps.now?.() ?? new Date());
+      // Look a fortnight at a time so a busy calendar does not mean one huge query.
+      for (let offset = 0; offset <= BOOKING_HORIZON_DAYS && !startsAt; offset += 14) {
+        const dates = Array.from({ length: 14 }, (_, i) => addIstDays(today, offset + i));
+        const slots = await computeSlots(city, shortest.minutes, dates, deps);
+        for (const date of dates) {
+          const open = slots.get(date)?.find((s) => s.freeTechIds.length > 0);
+          if (open) {
+            startsAt = open.startsAt.toISOString();
+            break;
+          }
+        }
+      }
+    }
+    res.set("Cache-Control", "no-store");
+    res.json({ city, startsAt });
+  });
+
+  return router;
+}
+
+export function bookingsRouter(deps: BookingDeps): Router {
+  const router = Router();
+
+  router.post("/hold", async (req, res) => {
+    const input = holdRequestSchema.parse(req.body);
+    res.status(201).json(await placeHold(input, deps));
+  });
+
+  router.delete("/hold/:token", async (req, res) => {
+    const token = z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{16,64}$/)
+      .safeParse(req.params.token);
+    if (token.success) await releaseHold(token.data, deps);
+    res.status(204).end();
+  });
+
+  router.post("/", async (req, res) => {
+    const input = createBookingRequestSchema.parse(req.body);
+    res.status(201).json(await confirmBooking(input, deps));
+  });
+
+  return router;
+}
+
+export function pincodeRouter(): Router {
+  const router = Router();
+  router.post("/check", (req, res) => {
+    const { pincode } = pincodeCheckRequestSchema.parse(req.body);
+    const city = visitCityForPincode(pincode);
+    res.json({ covered: city !== null, city });
+  });
+  return router;
+}

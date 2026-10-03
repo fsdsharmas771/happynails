@@ -93,4 +93,13 @@ How it fits together:
 
 Customers track orders at `/order/<number>?token=<token>`; the token is in their confirmation link and is stored only as a hash.
 
+## Home-visit bookings
+
+- Availability for a city and day = each active technician's weekly slot times (AvailabilityRule) minus their blocked days (AvailabilityBlock), minus confirmed bookings, minus live holds, limited to technicians who cover that city. Slots must start at least 3 hours ahead and within 90 days. Days and times are India time; everything is stored in UTC.
+- The visit length (service plus add-ons) matters: a long visit at 10:00 also blocks a technician's 12:30 start if it runs past 12:30.
+- Picking a time places a 10-minute hold in Redis. The hold claims, for one technician, every slot start the visit covers, atomically, so overlapping holds cannot both succeed. Confirming re-checks for overlaps inside a Mongo transaction, and a partial unique index on (technician, start) for confirmed bookings is the last line of defence. A slot that is gone returns 409.
+- A confirmation message is queued on booking; a BullMQ scheduler at 18:00 India time queues reminders for the next day's visits.
+- Bookings are paid after the visit; there is no online payment for them.
+- `pnpm seed` adds the prototype's services and add-ons and two **placeholder technicians** working every day at 10:00, 12:30, 15:00, 17:30 and 19:30, so the calendar works before the real team is added in the admin.
+
 A deployment outline will be added in the hardening phase.

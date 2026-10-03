@@ -9,17 +9,20 @@ import { productsRouter, shippingRouter } from "./routes/catalogue";
 import { healthRouter, type HealthCheck } from "./routes/health";
 import { checkoutRouter, ordersRouter, paymentsRouter, webhooksRouter } from "./routes/orders";
 import type { OrderDeps } from "./orders/service";
+import type { BookingDeps } from "./bookings/engine";
+import { availabilityRouter, bookingsRouter, pincodeRouter, servicesRouter } from "./routes/bookings";
 
 export interface AppDeps {
   logger: Logger;
   allowedOrigins: string[];
   checks: { mongo: HealthCheck; redis: HealthCheck };
   orders: OrderDeps;
+  bookings: BookingDeps;
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
 
-export function createApp({ logger, allowedOrigins, checks, orders }: AppDeps): Express {
+export function createApp({ logger, allowedOrigins, checks, orders, bookings }: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -49,6 +52,10 @@ export function createApp({ logger, allowedOrigins, checks, orders }: AppDeps): 
   app.use("/api/checkout", checkoutRouter(orders));
   app.use("/api/orders", ordersRouter(orders));
   app.use("/api/payments", paymentsRouter(orders));
+  app.use("/api/services", servicesRouter());
+  app.use("/api/availability", availabilityRouter(bookings));
+  app.use("/api/bookings", bookingsRouter(bookings));
+  app.use("/api/pincode", pincodeRouter());
 
   app.use(notFound);
   app.use(errorHandler);
