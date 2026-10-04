@@ -102,6 +102,12 @@ Customers track orders at `/order/<number>?token=<token>`; the token is in their
 - Customers choose to **pay online when booking** (Razorpay, same webhook as orders) or **after the visit** by UPI or cash. An online booking holds its slot as "awaiting payment" until the webhook confirms it; unpaid ones are cancelled after 30 minutes. The customer can retry payment or switch to paying after the visit. A payment that arrives after the slot was given away is recorded and the booking flagged for a refund instead of double-booking.
 - `pnpm seed` adds the prototype's services and add-ons and two **placeholder technicians** working every day at 10:00, 12:30, 15:00, 17:30 and 19:30, so the calendar works before the real team is added in the admin.
 
+## Content and SEO
+
+- Stories show only testimonials published in the admin; with none published the section and its nav link are hidden. Promises, FAQ and before/after copy live in `apps/web/src/config/content.ts`, with unconfirmed business statements marked PLACEHOLDER.
+- `/robots.txt` and `/sitemap.xml` are served by the API (proxied by the storefront). The sitemap, canonical link and structured data appear only once `PUBLIC_SITE_URL` is set.
+- An open set (`/?set=rose-chrome`) gets its own page title and description.
+
 ## Admin
 
 Open http://localhost:5174 and sign in. `pnpm seed` creates the first owner from `ADMIN_OWNER_EMAIL` and `ADMIN_OWNER_PASSWORD` in `.env` if no owner exists yet.

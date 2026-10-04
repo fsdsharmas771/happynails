@@ -1,0 +1,344 @@
+/* Stories, before/after, promises and FAQ, ported from docs/design-reference.html. */
+.reel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 18px;
+  margin-inline: calc(clamp(16px, 4vw, 52px) * -1);
+  padding-inline: clamp(16px, 4vw, 52px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+.vid {
+  flex: 0 0 clamp(210px, 24vw, 270px);
+  scroll-snap-align: start;
+  aspect-ratio: 9/16;
+  position: relative;
+  border: 0;
+  padding: 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  text-align: left;
+  background: linear-gradient(160deg, var(--blush), var(--bg2));
+  color: #fff;
+}
+.vid .poster {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.8s var(--ease);
+}
+.vid .poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vid:hover .poster {
+  transform: scale(1.06);
+}
+.vid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.28),
+    transparent 28%,
+    transparent 52%,
+    rgba(0, 0, 0, 0.78)
+  );
+}
+.vid .cap {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.vid .cap b {
+  font-family: var(--display);
+  font-size: calc(24px * var(--hs));
+  font-weight: 400;
+  line-height: 1.05;
+}
+.vid .cap span {
+  font-size: 12px;
+  opacity: 0.85;
+}
+.vid .quote {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 40%;
+  z-index: 2;
+  font-family: var(--display);
+  font-size: calc(20px * var(--hs));
+  line-height: 1.2;
+}
+.vid .play {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(6px);
+  transition: background 0.3s;
+}
+.vid:hover .play {
+  background: rgba(255, 255, 255, 0.25);
+}
+.vid .play::before {
+  content: "";
+  border-left: 11px solid #fff;
+  border-block: 7px solid transparent;
+  margin-left: 3px;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 4, 6, 0.92);
+  padding: 20px;
+}
+.lb {
+  position: relative;
+  height: min(86vh, 760px);
+  aspect-ratio: 9/16;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--r);
+  color: #fff;
+  background: #000;
+}
+.lb video,
+.lb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lb .tx {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 56px;
+  z-index: 2;
+  font-family: var(--display);
+  font-size: calc(24px * var(--hs));
+  line-height: 1.15;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.lb .who {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  z-index: 2;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+.lb .x {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  z-index: 5;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Before and after */
+.ba {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: center;
+}
+.ba-box {
+  position: relative;
+  aspect-ratio: 4/3.3;
+  border: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 40%, var(--panel), var(--bg2));
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+.ba-box > svg {
+  position: absolute;
+  inset: 6% 4%;
+  width: 92%;
+  height: 88%;
+}
+.ba-box .before {
+  position: absolute;
+  clip-path: inset(0 calc(100% - var(--p, 50%)) 0 0);
+  background: var(--bg2);
+  inset: 0;
+  padding: 6% 4%;
+}
+.ba-box .before svg {
+  width: 100%;
+  height: 100%;
+}
+.ba-box .handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--p, 50%);
+  width: 2px;
+  background: var(--gold);
+  pointer-events: none;
+}
+.ba-box .handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--gold);
+}
+.ba-box input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  margin: 0;
+}
+.ba-box .lab {
+  position: absolute;
+  bottom: 12px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: var(--bg);
+  padding: 4px 10px;
+  border-radius: 99px;
+  z-index: 2;
+  pointer-events: none;
+}
+.ba-box .lab.a {
+  left: 12px;
+}
+.ba-box .lab.b {
+  right: 12px;
+}
+.ba-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 46ch;
+}
+.ba-copy > p:last-child {
+  color: var(--muted);
+}
+
+/* Promises */
+.prom {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.prom > div {
+  padding: 28px 24px 28px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.prom h3 {
+  font-size: calc(26px * var(--hs));
+}
+.prom p {
+  color: var(--muted);
+  font-size: 14px;
+}
+.prom .dot {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--gold);
+  transform: rotate(45deg);
+  margin-bottom: 6px;
+}
+
+/* FAQ */
+.faq {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: clamp(24px, 5vw, 80px);
+}
+.faq-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.faq-intro p {
+  color: var(--muted);
+  max-width: 34ch;
+}
+.faq details {
+  border-bottom: 1px solid var(--line);
+}
+.faq details:first-child {
+  border-top: 1px solid var(--line);
+}
+.faq summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 0;
+  font-family: var(--display);
+  font-size: calc(22px * var(--hs));
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq summary::after {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background:
+    linear-gradient(var(--gold), var(--gold)) center/100% 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) center/1px 100% no-repeat;
+  transition: transform 0.4s var(--ease);
+}
+.faq details[open] summary::after {
+  transform: rotate(45deg);
+}
+.faq details p {
+  padding: 0 0 22px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+@media (max-width: 960px) {
+  .ba,
+  .faq {
+    grid-template-columns: 1fr;
+  }
+}

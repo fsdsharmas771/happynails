@@ -5,6 +5,7 @@ import {
   holdResponseSchema,
   nextSlotResponseSchema,
   pincodeCheckResponseSchema,
+  publicTestimonialSchema,
   servicesResponseSchema,
   type CreateBookingRequest,
   type HoldRequest,
@@ -82,6 +83,7 @@ export const api = {
       body,
     }),
   services: () => request("/services", servicesResponseSchema),
+  testimonials: () => request("/testimonials", publicTestimonialSchema.array()),
   availability: (q: { city: VisitCity; serviceId: string; addonIds: string[]; month: string }) =>
     request(
       `/availability?${new URLSearchParams({

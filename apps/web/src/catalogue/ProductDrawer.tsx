@@ -12,6 +12,7 @@ import {
 import { useCart } from "../cart/store";
 import { KIT } from "../config/site";
 import { ApiError, api } from "../lib/api";
+import { useDocumentMeta } from "../lib/meta";
 import { useDialog } from "../lib/useDialog";
 import { useToast } from "../layout/Toast";
 import { ProductVisual } from "./ProductVisual";
@@ -177,6 +178,15 @@ export function ProductDrawer() {
   const ref = useRef<HTMLElement>(null);
   useDialog(open, ref, close);
   const { data, isError, error } = useProduct(shown);
+  // An open set gets its own title and description, so a shared ?set= link reads well.
+  useDocumentMeta(
+    open && data
+      ? {
+          title: `${data.product.name} press-on nails · Happy Nails by Anamika`,
+          description: data.product.description || undefined,
+        }
+      : {},
+  );
   const missing = isError && error instanceof ApiError && error.status === 404;
 
   return (

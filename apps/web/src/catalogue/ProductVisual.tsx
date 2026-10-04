@@ -11,7 +11,16 @@ export function ProductVisual({
 }) {
   const photo = product.images[0];
   if (photo) {
-    return <img src={photo.url} alt={decorative ? "" : photo.alt || product.name} loading="lazy" />;
+    return (
+      <img
+        src={photo.url}
+        alt={decorative ? "" : photo.alt || product.name}
+        loading="lazy"
+        decoding="async"
+        width={640}
+        height={560}
+      />
+    );
   }
   return (
     <NailArt

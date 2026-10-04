@@ -6,7 +6,7 @@ export function LineThumb({ product }: { product: QuoteLine["product"] }) {
   return (
     <div className="th" aria-hidden="true">
       {product.image ? (
-        <img src={product.image.url} alt="" loading="lazy" />
+        <img src={product.image.url} alt="" loading="lazy" decoding="async" width={144} height={144} />
       ) : (
         <NailArt
           shape={product.shape}

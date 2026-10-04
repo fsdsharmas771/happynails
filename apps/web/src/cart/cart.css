@@ -161,9 +161,17 @@
   color: var(--gold);
   font-size: calc(22px * var(--hs));
 }
+/* Future steps: fields faded and inert; the heading stays readable (muted text meets AA). */
 .co-step.dim {
-  opacity: 0.4;
   pointer-events: none;
+}
+.co-step.dim > .co-fields,
+.co-step.dim > .done-note {
+  opacity: 0.4;
+}
+.co-step.dim h3,
+.co-step.dim h3 i {
+  color: var(--muted);
 }
 .co-step .edit {
   margin-left: auto;

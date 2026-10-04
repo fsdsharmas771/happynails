@@ -4,6 +4,7 @@ import { selectCount, useBagDrawer, useCart } from "../cart/store";
 import { NAV_LINKS, SITE } from "../config/site";
 import { scrollToSection } from "../lib/motion";
 import { useDialog } from "../lib/useDialog";
+import { useTestimonials } from "../home/Sections";
 
 /** Anchor that smooth-scrolls to an in-page section instead of jumping. */
 export function SectionLink({
@@ -80,7 +81,14 @@ export function Brand() {
   );
 }
 
+/** Nav links, without Stories until at least one real testimonial is published. */
+function useNavLinks() {
+  const stories = useTestimonials();
+  return NAV_LINKS.filter((l) => l.id !== "stories" || (stories.data?.length ?? 0) > 0);
+}
+
 function MenuOverlay({ onClose }: { onClose: () => void }) {
+  const navLinks = useNavLinks();
   const ref = useRef<HTMLDivElement>(null);
   useDialog(true, ref, onClose);
   return (
@@ -89,7 +97,7 @@ function MenuOverlay({ onClose }: { onClose: () => void }) {
         <span className="bn">{SITE.name}</span>
         <button className="x" type="button" aria-label="Close menu" onClick={onClose} />
       </div>
-      {NAV_LINKS.map((l) => (
+      {navLinks.map((l) => (
         <SectionLink key={l.id} to={l.id} onNavigate={onClose}>
           {l.label}
         </SectionLink>
@@ -99,6 +107,7 @@ function MenuOverlay({ onClose }: { onClose: () => void }) {
 }
 
 export function Nav() {
+  const navLinks = useNavLinks();
   const ref = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -120,7 +129,7 @@ export function Nav() {
       <header className="nav" ref={ref}>
         <Brand />
         <nav className="links" aria-label="Main">
-          {NAV_LINKS.map((l) => (
+          {navLinks.map((l) => (
             <SectionLink key={l.id} to={l.id}>
               {l.label}
             </SectionLink>
