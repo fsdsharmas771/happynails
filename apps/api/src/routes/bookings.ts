@@ -29,6 +29,8 @@ import {
   type BookingDeps,
 } from "../bookings/engine";
 import { HttpError } from "../errors";
+import { toInvoiceDto } from "../invoices/service";
+import { Invoice } from "../models/Invoice";
 import { Addon, Booking, Service } from "../models/Booking";
 
 export function servicesRouter(deps: Pick<BookingDeps, "gateway">): Router {
@@ -143,7 +145,26 @@ export function bookingsRouter(deps: BookingDeps): Router {
     const access = bookingAccessSchema.safeParse(req.query);
     if (!access.success) throw new HttpError(404, "BOOKING_NOT_FOUND", "We could not find that booking");
     res.set("Cache-Control", "no-store");
-    res.json(toTrackedBooking(await findBooking(access.data)));
+    const booking = await findBooking(access.data);
+    const invoice = await Invoice.findOne({
+      kind: "invoice",
+      "source.type": "booking",
+      "source.id": booking._id,
+    }).lean();
+    res.json({ ...toTrackedBooking(booking), ...(invoice ? { invoiceNumber: invoice.number } : {}) });
+  });
+
+  router.get("/invoice", async (req, res) => {
+    const access = bookingAccessSchema.safeParse(req.query);
+    if (!access.success) throw new HttpError(404, "BOOKING_NOT_FOUND", "We could not find that booking");
+    const booking = await findBooking(access.data);
+    const docs = await Invoice.find({ "source.type": "booking", "source.id": booking._id })
+      .sort({ issuedAt: 1 })
+      .lean();
+    if (!docs.length)
+      throw new HttpError(404, "INVOICE_NOT_READY", "The invoice is issued once the visit is paid");
+    res.set("Cache-Control", "no-store");
+    res.json(docs.map(toInvoiceDto));
   });
 
   /** Retry online payment for a booking still awaiting it. */

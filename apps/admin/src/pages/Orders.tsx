@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { ORDER_STATUSES } from "@happynails/shared";
 import { useIsOwner } from "../auth";
+import { InvoiceLinks } from "./Gst";
 import { Chip, Field, Message, PageHead } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { formatINR, label, parseRupees, when } from "../lib/format";
@@ -214,6 +215,10 @@ export function OrderDetailPage() {
                 </div>
               )}
             </div>
+          </section>
+          <section className="panel">
+            <h2>GST</h2>
+            <InvoiceLinks source="order" id={o._id} />
           </section>
           <section className="panel">
             <h2>History</h2>

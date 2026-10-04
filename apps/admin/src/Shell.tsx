@@ -13,6 +13,7 @@ const LINKS = [
   { to: "/technicians", label: "Technicians" },
   { to: "/services", label: "Services" },
   { to: "/testimonials", label: "Testimonials" },
+  { to: "/gst", label: "GST" },
 ];
 
 export function Shell() {

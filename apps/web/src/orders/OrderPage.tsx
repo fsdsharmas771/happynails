@@ -220,6 +220,14 @@ export function OrderPage() {
               Track with {o.tracking.carrier ?? "the courier"}
             </a>
           )}
+          {o.invoiceNumber && (
+            <Link
+              className="btn ghost"
+              to={`/invoice?for=order&number=${encodeURIComponent(o.number)}&token=${encodeURIComponent(token)}`}
+            >
+              Tax invoice {o.invoiceNumber}
+            </Link>
+          )}
           <Link className="btn ghost" to="/">
             Back to the site
           </Link>

@@ -3,6 +3,7 @@ import {
   bookingConfirmationSchema,
   createOrderResponseSchema,
   holdResponseSchema,
+  invoiceSchema,
   nextSlotResponseSchema,
   pincodeCheckResponseSchema,
   publicTestimonialSchema,
@@ -115,6 +116,16 @@ export const api = {
     }),
   payBookingLater: (body: BookingAccess) =>
     request("/bookings/pay-later", trackedBookingSchema, { method: "POST", body }),
+  orderInvoice: ({ number, token }: OrderAccess) =>
+    request(
+      `/orders/invoice?number=${encodeURIComponent(number)}&token=${encodeURIComponent(token)}`,
+      invoiceSchema.array(),
+    ),
+  bookingInvoice: ({ number, token }: BookingAccess) =>
+    request(
+      `/bookings/invoice?number=${encodeURIComponent(number)}&token=${encodeURIComponent(token)}`,
+      invoiceSchema.array(),
+    ),
   verifyBookingPayment: (body: {
     number: string;
     razorpay_order_id: string;

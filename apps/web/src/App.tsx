@@ -10,6 +10,7 @@ import { lazy, Suspense } from "react";
 // Checkout (with Razorpay) and order tracking are separate pages: split them out of the main bundle.
 const CheckoutPage = lazy(() => import("./checkout/CheckoutPage").then((m) => ({ default: m.CheckoutPage })));
 const OrderPage = lazy(() => import("./orders/OrderPage").then((m) => ({ default: m.OrderPage })));
+const InvoicePage = lazy(() => import("./orders/InvoicePage").then((m) => ({ default: m.InvoicePage })));
 const Loading = () => (
   <p className="note" style={{ padding: 40 }}>
     Loading
@@ -37,6 +38,14 @@ export function App() {
               element={
                 <Suspense fallback={<Loading />}>
                   <CheckoutPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="invoice"
+              element={
+                <Suspense fallback={<Loading />}>
+                  <InvoicePage />
                 </Suspense>
               }
             />

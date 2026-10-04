@@ -6,6 +6,8 @@ import {
 } from "@happynails/shared";
 import express, { Router } from "express";
 import { HttpError } from "../errors";
+import { toInvoiceDto } from "../invoices/service";
+import { Invoice } from "../models/Invoice";
 import { Order } from "../models/Order";
 import { priceCart, toQuoteResponse } from "../orders/pricing";
 import {
@@ -40,7 +42,27 @@ export function ordersRouter(deps: OrderDeps): Router {
     const access = orderAccessSchema.safeParse(req.query);
     if (!access.success) throw new HttpError(404, "ORDER_NOT_FOUND", "We could not find that order");
     res.set("Cache-Control", "no-store");
-    res.json(toTrackedOrder(await findByAccess(access.data)));
+    const order = await findByAccess(access.data);
+    const invoice = await Invoice.findOne({
+      kind: "invoice",
+      "source.type": "order",
+      "source.id": order._id,
+    }).lean();
+    res.json({ ...toTrackedOrder(order), ...(invoice ? { invoiceNumber: invoice.number } : {}) });
+  });
+
+  /** The GST invoice (and any credit notes) for the customer, with the same access as tracking. */
+  router.get("/invoice", async (req, res) => {
+    const access = orderAccessSchema.safeParse(req.query);
+    if (!access.success) throw new HttpError(404, "ORDER_NOT_FOUND", "We could not find that order");
+    const order = await findByAccess(access.data);
+    const docs = await Invoice.find({ "source.type": "order", "source.id": order._id })
+      .sort({ issuedAt: 1 })
+      .lean();
+    if (!docs.length)
+      throw new HttpError(404, "INVOICE_NOT_READY", "The invoice is issued once payment is confirmed");
+    res.set("Cache-Control", "no-store");
+    res.json(docs.map(toInvoiceDto));
   });
 
   router.post("/pay", async (req, res) => {

@@ -496,3 +496,16 @@ tr[aria-selected="true"] td {
     padding: 4px;
   }
 }
+
+@media print {
+  .side,
+  .no-print {
+    display: none !important;
+  }
+  .shell {
+    display: block;
+  }
+  .main {
+    padding: 0;
+  }
+}

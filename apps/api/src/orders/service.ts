@@ -12,6 +12,7 @@ import { PAYMENT_TIMEOUT_MS } from "../config/checkout";
 import { HttpError } from "../errors";
 import type { Jobs } from "../jobs/types";
 import { applyBookingPayment, type RazorpayPaymentEntity } from "../bookings/engine";
+import { ensureBookingInvoice, ensureOrderInvoice } from "../invoices/service";
 import { Booking } from "../models/Booking";
 import { Counter, Order, ProcessedWebhook, type OrderDoc } from "../models/Order";
 import { Product } from "../models/Product";
@@ -244,12 +245,14 @@ export async function applyRazorpayEvent(
   let outcome = "ignored" as WebhookOutcome;
   let placedOrderId: string | null = null;
   let confirmedBookingId: string | null = null;
+  let paidBookingId: string | null = null;
 
   try {
     await mongoose.connection.transaction(async (session) => {
       outcome = "ignored";
       placedOrderId = null;
       confirmedBookingId = null;
+      paidBookingId = null;
       if (handled.includes(evt.event) && payment) {
         const order = await Order.findOne({ "payment.razorpayOrderId": payment.order_id }).session(session);
         // Home-visit bookings paid online share the same Razorpay account and webhook.
@@ -259,6 +262,7 @@ export async function applyRazorpayEvent(
         if (booking) {
           outcome = await applyBookingPayment(booking, evt.event, payment, session);
           if (outcome === "placed") confirmedBookingId = booking.id;
+          if (evt.event !== "payment.failed") paidBookingId = booking.id;
         } else if (!order) outcome = "unknown_order";
         else if (evt.event === "payment.failed") outcome = await recordFailure(order, payment, session);
         else if (payment.amount !== order.totalPaise) outcome = "amount_mismatch";
@@ -282,6 +286,15 @@ export async function applyRazorpayEvent(
       deps.log.error({ err, eventId }, "could not enqueue order notification");
     });
   }
+  // GST invoices follow the payment; a failure here is logged and can be backfilled, never blocks payment.
+  if (placedOrderId)
+    await ensureOrderInvoice(placedOrderId, deps.log).catch((err) =>
+      deps.log.error({ err }, "invoice not issued"),
+    );
+  if (paidBookingId)
+    await ensureBookingInvoice(paidBookingId, deps.log).catch((err) =>
+      deps.log.error({ err }, "invoice not issued"),
+    );
   if (confirmedBookingId) {
     await deps.jobs.notify({ type: "booking_confirmed", bookingId: confirmedBookingId }).catch((err) => {
       deps.log.error({ err, eventId }, "could not enqueue booking notification");

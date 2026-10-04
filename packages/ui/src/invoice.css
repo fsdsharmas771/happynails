@@ -1,0 +1,125 @@
+/* Printable GST invoice. Plain and high-contrast on purpose: it is a legal document. */
+.invoice {
+  max-width: 860px;
+  margin: 0 auto;
+  background: #fff;
+  color: #1d1b1b;
+  border: 1px solid #d8d4cf;
+  padding: clamp(18px, 4vw, 40px);
+  font-size: 13px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.invoice p {
+  margin: 0;
+}
+.inv-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #1d1b1b;
+  padding-bottom: 16px;
+}
+.inv-brand {
+  font-family: var(--display);
+  font-size: 26px;
+  letter-spacing: 0.04em;
+}
+.inv-title h1 {
+  font-family: var(--body);
+  font-size: 18px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.inv-title dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 14px;
+  margin: 0;
+}
+.inv-title dt {
+  color: #5c5757;
+}
+.inv-title dd {
+  margin: 0;
+  font-weight: 600;
+}
+.inv-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.inv-lbl {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #5c5757;
+  font-weight: 700;
+  margin-top: 6px !important;
+}
+.inv-tablewrap {
+  overflow-x: auto;
+}
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.inv-table th,
+.inv-table td {
+  border-bottom: 1px solid #d8d4cf;
+  padding: 8px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+.inv-table th {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5c5757;
+}
+.inv-table .n {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.inv-table small {
+  color: #5c5757;
+}
+.inv-table tfoot td {
+  border-top: 2px solid #1d1b1b;
+  border-bottom: 0;
+  font-weight: 600;
+}
+.inv-foot {
+  color: #5c5757;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+@media (max-width: 560px) {
+  .inv-parties {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  body {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .invoice {
+    border: 0;
+    padding: 0;
+    max-width: none;
+  }
+  .invoice + .invoice {
+    break-before: page;
+  }
+}

@@ -2,6 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { addIstDays, istToUtc, type BookingStatus, type VisitCity } from "@happynails/shared";
 import mongoose from "mongoose";
 import { HttpError } from "../errors";
+import { ensureBookingInvoice, issueCreditNote } from "../invoices/service";
 import { Booking, Technician, type BookingDoc } from "../models/Booking";
 import { assertTechnicianFree, loadSelection, nextBookingNumber, type BookingDeps } from "./engine";
 
@@ -222,6 +223,7 @@ export async function markBookingPaid(id: string, by: string): Promise<BookingDo
   b.payment.paidAt = new Date();
   b.events.push({ status: b.status, at: new Date(), note: `Payment collected after the visit (${by})` });
   await b.save();
+  await ensureBookingInvoice(b.id);
   return b;
 }
 
@@ -255,5 +257,9 @@ export async function refundBooking(
     note: `Refunded ${r.amountPaise} paise: ${input.reason} (${by})`,
   });
   await b.save();
+  await issueCreditNote(
+    { type: "booking", id: b.id },
+    { razorpayRefundId: r.id, amountPaise: r.amountPaise, reason: input.reason, at: now },
+  );
   return b;
 }

@@ -158,7 +158,9 @@ export const bookingAccessSchema = z.object({
 export type BookingAccess = z.infer<typeof bookingAccessSchema>;
 
 /** What the customer sees when checking a visit. No phone or address. */
-export const trackedBookingSchema = bookingConfirmationSchema.omit({ trackToken: true, razorpay: true });
+export const trackedBookingSchema = bookingConfirmationSchema
+  .omit({ trackToken: true, razorpay: true })
+  .extend({ invoiceNumber: z.string().optional() });
 export type TrackedBooking = z.infer<typeof trackedBookingSchema>;
 
 export const bookingPaymentVerifySchema = bookingAccessSchema.pick({ number: true }).extend({

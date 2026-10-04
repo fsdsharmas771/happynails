@@ -9,6 +9,7 @@ import {
   calendarDaySchema,
   calendarQuerySchema,
   IST_DATE,
+  IST_MONTH,
   daysOfMonth,
   cancelSchema,
   istDateOf,
@@ -60,6 +61,9 @@ import {
   Technician,
 } from "../models/Booking";
 import { effectiveDays } from "../bookings/engine";
+import { gstCsv, gstReport } from "../invoices/report";
+import { toInvoiceDto } from "../invoices/service";
+import { Invoice } from "../models/Invoice";
 import { Order } from "../models/Order";
 import { Product } from "../models/Product";
 import {
@@ -375,6 +379,35 @@ export function adminRouter(deps: AdminDeps): Router {
   });
   router.post("/bookings/:id/refund", requireOwner, async (req, res) => {
     res.json(await refundBooking(idParam(req), refundSchema.parse(req.body), who(req), deps.bookings));
+  });
+
+  // ---------- GST ----------
+  router.get("/gst", async (req, res) => {
+    const { month } = z.object({ month: z.string().regex(IST_MONTH) }).parse(req.query);
+    res.json(await gstReport(month));
+  });
+  router.get("/gst.csv", async (req, res) => {
+    const { month } = z.object({ month: z.string().regex(IST_MONTH) }).parse(req.query);
+    res
+      .type("text/csv")
+      .set("Content-Disposition", `attachment; filename="happy-nails-gst-${month}.csv"`)
+      .send(await gstCsv(month));
+  });
+  router.get("/invoices", async (req, res) => {
+    const q = z
+      .object({
+        number: z.string().max(30).optional(),
+        source: z.enum(["order", "booking"]).optional(),
+        sourceId: z.string().optional(),
+      })
+      .parse(req.query);
+    const filter = q.number
+      ? { number: q.number }
+      : q.source && q.sourceId && mongoose.isValidObjectId(q.sourceId)
+        ? { "source.type": q.source, "source.id": q.sourceId }
+        : null;
+    if (!filter) throw new HttpError(400, "BAD_REQUEST", "Give an invoice number or a source");
+    res.json((await Invoice.find(filter).sort({ issuedAt: 1 }).lean()).map(toInvoiceDto));
   });
 
   // ---------- availability calendar ----------

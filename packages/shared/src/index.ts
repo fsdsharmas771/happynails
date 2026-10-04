@@ -10,3 +10,4 @@ export * from "./time";
 export * from "./booking";
 export * from "./admin";
 export * from "./business";
+export * from "./gst";

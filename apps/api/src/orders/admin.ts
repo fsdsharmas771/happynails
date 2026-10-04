@@ -1,6 +1,7 @@
 import type { OrderStatus } from "@happynails/shared";
 import mongoose from "mongoose";
 import { HttpError } from "../errors";
+import { issueCreditNote } from "../invoices/service";
 import { Order, type OrderDoc } from "../models/Order";
 import { Product } from "../models/Product";
 import type { OrderDeps } from "./service";
@@ -157,5 +158,9 @@ export async function refundOrder(
     note: `${full ? "Refunded in full" : `Partly refunded ${r.amountPaise} paise`}: ${input.reason} (${by})`,
   });
   await order.save();
+  await issueCreditNote(
+    { type: "order", id: order.id },
+    { razorpayRefundId: r.id, amountPaise: r.amountPaise, reason: input.reason, at: now },
+  );
   return order;
 }

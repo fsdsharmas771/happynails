@@ -187,6 +187,8 @@ export const trackedOrderSchema = z.object({
   totals: totalsSchema,
   tracking: z.object({ carrier: z.string(), awb: z.string(), url: z.string() }).partial().optional(),
   events: z.array(z.object({ status: orderStatusSchema, at: z.string() })),
+  /** Set once the GST invoice is issued (after payment). */
+  invoiceNumber: z.string().optional(),
   /** Standard delivery window in days from placement. */
   deliveryDays: z.tuple([z.number().int(), z.number().int()]).optional(),
 });

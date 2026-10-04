@@ -10,6 +10,7 @@ import {
   VISIT_CITIES,
 } from "@happynails/shared";
 import { useIsOwner } from "../auth";
+import { InvoiceLinks } from "./Gst";
 import { Chip, Field, Message, PageHead } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import {
@@ -233,6 +234,8 @@ function BookingDetail({
         </div>
       )}
 
+      <div className="lbl">GST</div>
+      <InvoiceLinks source="booking" id={b._id} />
       <div className="lbl">History</div>
       <ol className="timeline">
         {b.events.map((e, k) => (

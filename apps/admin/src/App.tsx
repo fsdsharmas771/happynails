@@ -7,6 +7,7 @@ import { AvailabilityPage } from "./pages/Availability";
 import { BookingsPage } from "./pages/Bookings";
 import { ServicesPage, TestimonialsPage } from "./pages/Content";
 import { DashboardPage } from "./pages/Dashboard";
+import { GstPage, InvoiceAdminPage } from "./pages/Gst";
 import { OrderDetailPage, OrdersPage } from "./pages/Orders";
 import { ProductsPage } from "./pages/Products";
 import { TechniciansPage } from "./pages/Team";
@@ -44,6 +45,8 @@ export function App() {
                 <Route path="technicians" element={<TechniciansPage />} />
                 <Route path="services" element={<ServicesPage />} />
                 <Route path="testimonials" element={<TestimonialsPage />} />
+                <Route path="gst" element={<GstPage />} />
+                <Route path="invoice" element={<InvoiceAdminPage />} />
                 <Route path="*" element={<p className="note">Page not found.</p>} />
               </Route>
             </Routes>

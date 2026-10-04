@@ -8,7 +8,8 @@
     "start": "tsx src/index.ts",
     "seed": "tsx src/scripts/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backfill:invoices": "tsx src/scripts/backfill-invoices.ts"
   },
   "dependencies": {
     "@happynails/shared": "workspace:*",

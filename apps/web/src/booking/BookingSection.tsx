@@ -785,9 +785,21 @@ export function BookingSection() {
                     ? "Paid online. Nothing to pay at the visit."
                     : "Pay after your visit by UPI or cash."}
               </p>
-              <button className="btn ghost" type="button" onClick={startOver}>
-                Book another visit
-              </button>
+              <div className="seg">
+                {done.paymentStatus === "captured" && !confirming && (
+                  <a
+                    className="btn ghost"
+                    href={`/invoice?for=booking&number=${encodeURIComponent(done.number)}&token=${encodeURIComponent(done.trackToken)}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Tax invoice
+                  </a>
+                )}
+                <button className="btn ghost" type="button" onClick={startOver}>
+                  Book another visit
+                </button>
+              </div>
             </DoneView>
           )}
         </div>
