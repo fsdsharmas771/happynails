@@ -1,16 +1,9 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig, type Plugin } from "vite";
-import { THEME_BOOT_SCRIPT } from "@happynails/ui/theme-boot";
-
-function themeBoot(): Plugin {
-  return {
-    name: "happynails-theme-boot",
-    transformIndexHtml: () => [{ tag: "script", children: THEME_BOOT_SCRIPT, injectTo: "head-prepend" }],
-  };
-}
+import { defineConfig } from "vite";
+import { themeBootPlugin } from "@happynails/ui/theme-boot";
 
 export default defineConfig({
-  plugins: [react(), themeBoot()],
+  plugins: [react(), themeBootPlugin()],
   server: {
     host: true,
     port: 5174,

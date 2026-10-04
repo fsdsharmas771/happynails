@@ -1,14 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { THEME_BOOT_SCRIPT } from "@happynails/ui/theme-boot";
-
-/** Applies the saved theme before first paint so there is no flash of the wrong one. */
-function themeBoot(): Plugin {
-  return {
-    name: "happynails-theme-boot",
-    transformIndexHtml: () => [{ tag: "script", children: THEME_BOOT_SCRIPT, injectTo: "head-prepend" }],
-  };
-}
+import { themeBootPlugin } from "@happynails/ui/theme-boot";
 
 /**
  * Canonical URL, og:url and structured data need the site's public address, which is not
@@ -42,7 +34,7 @@ function seoTags(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), themeBoot(), seoTags()],
+  plugins: [react(), themeBootPlugin(), seoTags()],
   server: {
     host: true,
     port: 5173,

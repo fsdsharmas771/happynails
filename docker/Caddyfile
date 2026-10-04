@@ -1,0 +1,19 @@
+# HTTPS edge for production. Caddy gets and renews certificates automatically once
+# SITE_DOMAIN and ADMIN_DOMAIN point at this server (ports 80 and 443 open).
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy web:80
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$ADMIN_DOMAIN} {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy admin:80
+}

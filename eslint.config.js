@@ -5,7 +5,17 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/node_modules/**", "**/dist/**", "**/.pnpm-store/**", "docs/**", "**/coverage/**"] },
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "e2e/report/**",
+      "e2e/results/**",
+      "**/.pnpm-store/**",
+      "docs/**",
+      "**/coverage/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -15,7 +25,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["apps/api/**/*.ts", "packages/shared/**/*.ts", "*.js"],
+    files: ["apps/api/**/*.ts", "packages/shared/**/*.ts", "e2e/**/*.ts", "*.js", "apps/api/*.mjs"],
     languageOptions: { globals: globals.node },
   },
   {

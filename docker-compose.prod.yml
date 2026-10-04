@@ -1,0 +1,104 @@
+# Production stack. See "Deployment" in README.md. Not for local development.
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Only the edge (Caddy) publishes ports; everything else talks on the internal network.
+
+services:
+  edge:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN, e.g. happynails.in}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?set ADMIN_DOMAIN, e.g. admin.happynails.in}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL for certificate notices}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - admin
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/static.Dockerfile
+      args:
+        APP: web
+        PUBLIC_SITE_URL: https://${SITE_DOMAIN}
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/static.Dockerfile
+      args:
+        APP: admin
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env.production
+        required: true
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/happynails?replicaSet=rs0}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      WEB_ORIGIN: https://${SITE_DOMAIN}
+      ADMIN_ORIGIN: https://${ADMIN_DOMAIN}
+      PUBLIC_SITE_URL: https://${SITE_DOMAIN}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # Single-node replica set (transactions need one). Not published outside the Docker network.
+  # To use MongoDB Atlas instead, set MONGO_URL and remove this service.
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok }"
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+volumes:
+  caddy_data:
+  caddy_config:
+  uploads:
+  mongo_data:
+  redis_data:

@@ -19,6 +19,8 @@ const envSchema = z.object({
   /** Seed only: the first owner account. */
   ADMIN_OWNER_EMAIL: z.email().optional(),
   ADMIN_OWNER_PASSWORD: z.string().min(10).optional(),
+  /** Proxies in front of the API: 1 behind nginx, 2 if a CDN such as Cloudflare sits in front of nginx. */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(1),
   UPLOAD_DIR: z.string().default("/app/uploads"),
   /** The storefront's public address, e.g. https://www.example.in. Needed for the sitemap. */
   PUBLIC_SITE_URL: z.url().optional(),

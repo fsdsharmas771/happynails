@@ -52,6 +52,7 @@ const app = createApp({
     uploadDir: env.UPLOAD_DIR,
   },
   siteUrl: env.PUBLIC_SITE_URL,
+  trustProxy: env.TRUST_PROXY,
   shipping: {
     provider:
       env.SHIPROCKET_EMAIL && env.SHIPROCKET_PASSWORD && env.SHIPROCKET_PICKUP_LOCATION

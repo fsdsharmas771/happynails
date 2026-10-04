@@ -4,8 +4,10 @@ import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { pinoHttp } from "pino-http";
+import { requestSerializer } from "./logger";
 import type { Logger } from "pino";
 import { errorHandler, notFound } from "./middleware/error";
+import { applyRateLimits, DEFAULT_RATE_LIMITS, type RateLimits } from "./middleware/rateLimits";
 import { productsRouter, shippingRouter } from "./routes/catalogue";
 import { healthRouter, type HealthCheck } from "./routes/health";
 import { checkoutRouter, ordersRouter, paymentsRouter, webhooksRouter } from "./routes/orders";
@@ -29,6 +31,10 @@ export interface AppDeps {
   /** Public storefront address, for the sitemap. */
   siteUrl?: string | undefined;
   shipping: { provider: ShippingProvider | null; webhookToken?: string | undefined };
+  /** Per-IP limits on public routes; `false` turns them off (most tests). Admin sign-in is always limited. */
+  rateLimits?: RateLimits | false;
+  /** Proxy hops in front of the API (nginx = 1), so limits see the real client address. */
+  trustProxy?: number;
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
@@ -42,10 +48,12 @@ export function createApp({
   admin,
   siteUrl,
   shipping,
+  rateLimits = DEFAULT_RATE_LIMITS,
+  trustProxy = 1,
 }: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", 1);
+  app.set("trust proxy", trustProxy);
 
   app.use(
     pinoHttp({
@@ -57,10 +65,12 @@ export function createApp({
         return id;
       },
       autoLogging: { ignore: (req) => req.url === "/api/health" },
+      serializers: { req: requestSerializer },
     }),
   );
   app.use(helmet());
   app.use(cors({ origin: allowedOrigins, credentials: true }));
+  if (rateLimits) applyRateLimits(app, rateLimits);
 
   // Raw-body routes first: the Razorpay webhook signature covers the exact bytes received.
   app.use("/api/webhooks", webhooksRouter(orders));

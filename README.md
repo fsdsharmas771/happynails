@@ -34,6 +34,7 @@ docker compose exec api pnpm lint        # ESLint
 docker compose exec api pnpm typecheck   # tsc --noEmit in every package
 docker compose exec api pnpm format      # Prettier
 docker compose exec api pnpm --filter @happynails/api seed
+pnpm e2e                                 # Playwright browser tests (see Testing)
 docker compose run --rm install          # after editing any package.json
 docker compose down                      # stop (add -v to wipe Mongo, Redis and node_modules volumes)
 ```
@@ -58,9 +59,10 @@ mongodb://localhost:27017/happynails?directConnection=true
 apps/api         Express API, Mongoose, Redis
 apps/web         storefront (React 18, Vite)
 apps/admin       owner dashboard (React 18, Vite)
-packages/shared  Zod schemas and helpers shared by every app (money, pincodes)
-packages/ui      design tokens and, from phase 2, the theme provider and NailArt
-docker/          dev image
+packages/shared  Zod schemas and helpers shared by every app (money, slots, pincodes, GST)
+packages/ui      design tokens, theme, NailArt, shared components and the invoice view
+e2e/             Playwright browser tests
+docker/          dev image, production Dockerfiles, nginx and Caddy config
 ```
 
 ## Payments (Razorpay, test mode)
@@ -143,9 +145,49 @@ Parcel size and weight sent to Shiprocket are placeholders in `apps/api/src/ship
 Open http://localhost:5174 and sign in. `pnpm seed` creates the first owner from `ADMIN_OWNER_EMAIL` and `ADMIN_OWNER_PASSWORD` in `.env` if no owner exists yet.
 
 - **Owner** can do everything, including prices and the catalogue, uploads, refunds, technicians, services and testimonials.
-- **Staff** handle day-to-day work: orders and tracking, bookings, and stock counts.
-- **Availability**: a month calendar per technician. Set exact start times for any date, close a day, or return it to the weekly pattern; customers see changes immediately. There is no screen for adding staff yet; ask for one or create them in the database.
+- **Staff** handle day-to-day work: orders and tracking, bookings, and stock counts. There is no screen for adding staff yet; ask for one or create them in the database.
+- **Availability**: a month calendar per technician. Set exact start times for any date, close a day, or return it to the weekly pattern; customers see changes immediately.
 - Sessions are a 2-hour signed token in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/admin`, renewed while in use. Passwords are argon2id. Failed sign-ins are limited to 10 per 15 minutes per address.
 - Uploads (product photos, testimonial videos and posters) are checked by their actual bytes, limited to 5 MB for images and 50 MB for video, and stored on local disk under `uploads/` in development.
 
-A deployment outline will be added in the hardening phase.
+## Testing
+
+- **Unit and API tests** (Vitest, `docker compose exec api pnpm test`): pricing and quotes, stock, Razorpay signatures and webhook idempotency (replays and concurrent duplicates), order expiry, slot generation, travel gaps and holds under concurrency, admin sign-in, sessions and roles, GST splits and invoices, WhatsApp and Shiprocket clients, rate limits and log redaction. API tests use throwaway Mongo databases and Redis key prefixes, never your data.
+- **Browser tests** (Playwright, `pnpm e2e` or `docker compose --profile e2e run --rm e2e`): shop to Razorpay payment, booking a visit paid after the visit and paid online, and admin sign-in. They run against the development stack in the Playwright container. With Razorpay test keys they pay with Razorpay's test card and OTP. They create real orders and bookings in the development database and cancel them afterwards through the admin API, using `ADMIN_OWNER_EMAIL` and `ADMIN_OWNER_PASSWORD` from `.env`. A failure leaves a trace and screenshot in `e2e/results` and a report in `e2e/report`. Never point them at production.
+
+## Security
+
+- Prices, totals, stock and slots are decided on the server; the client's numbers are ignored. Orders and visits are only marked paid by a signed Razorpay webhook whose amount matches, recorded once per event id.
+- Customer order and visit links carry a random token stored only as a hash and compared in constant time. It is removed from request logs.
+- Per-address request limits on the public API: 300 a minute overall; 20 orders, bookings or payment starts and 40 slot holds per 15 minutes; 60 lookups (tracking, invoices, pincode and delivery checks) per 5 minutes. Webhooks are exempt and checked by signature or token instead. The counts live in the API's memory, so they reset on restart and assume one API container.
+- Admin: argon2id passwords, short sessions in `httpOnly`, `Secure` (in production), `SameSite=Strict` cookies, a custom header on every request against cross-site forgery, owner-only actions checked on the server, and failed sign-ins limited.
+- Production pages send a strict Content-Security-Policy (scripts only from the site and Razorpay, no inline scripts, no eval), `nosniff`, a referrer policy and, through Caddy, HSTS. The admin is also marked `noindex`.
+- No secrets reach the browser bundles: only the Razorpay key id is sent to the page, at checkout time.
+
+## Deployment
+
+The production stack is `docker-compose.prod.yml`:
+
+| Service          | What it is                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `edge`           | Caddy: HTTPS for both domains with automatic certificates, HSTS, `www` redirect. The only service with public ports (80, 443).              |
+| `web`, `admin`   | nginx serving the built storefront and admin with security headers, forwarding `/api` and `/uploads` to the API.                            |
+| `api`            | Node 22 running the bundled API (`docker/api.Dockerfile`), with production dependencies only, as a non-root user. Also runs the job queues. |
+| `mongo`, `redis` | Single-node replica set and Redis on the internal network only, with named volumes.                                                         |
+
+Outline:
+
+1. A small Linux VM in India (for example 2 vCPU and 4 GB RAM) with Docker. Point `SITE_DOMAIN` and `ADMIN_DOMAIN` (for example `happynails.in` and `admin.happynails.in`) at it, and open ports 80 and 443 only.
+2. Clone the repo and create `.env.production` from `.env.example`: live Razorpay keys and webhook secret, a new `ADMIN_JWT_SECRET`, the owner's email and password, WhatsApp and Shiprocket credentials, and `SITE_DOMAIN`, `ADMIN_DOMAIN` and `ACME_EMAIL`. Keep the file off git (it is ignored).
+3. Start: `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`.
+4. Seed once: `docker compose -f docker-compose.prod.yml --env-file .env.production exec api node dist/seed.js`. This creates the owner, the catalogue, services and Anamika's hours, without overwriting later edits.
+5. In Razorpay (live mode), add the webhook `https://<SITE_DOMAIN>/api/webhooks/razorpay` with the events `payment.captured`, `payment.failed` and `order.paid`. In Shiprocket, add `https://<SITE_DOMAIN>/api/webhooks/courier-tracking` with the token.
+6. Sign in to the admin, change the owner password, and place one real low-value order and booking end to end before announcing the site.
+
+Running it:
+
+- **Updates:** `git pull`, then the same `up -d --build` command. Pages are cached by file hash, and `index.html` is never cached, so visitors get the new version straight away.
+- **Backups:** at least daily `mongodump` from the `mongo` container to storage off the server, plus the `uploads` volume. Test a restore. Alternatively use MongoDB Atlas (Mumbai region) by setting `MONGO_URL` and removing the `mongo` service.
+- **Health:** `https://<SITE_DOMAIN>/api/health` reports Mongo and Redis; point an uptime monitor at it. Logs are JSON on stdout (`docker compose ... logs api`) with request ids, without cookies, tokens or card data.
+- **Media:** uploads are stored on the `uploads` volume and served through the site. If traffic grows, move them to S3 or Cloudinary behind the existing `UploadProvider` interface.
+- **Behind a CDN** such as Cloudflare in front of Caddy, configure Caddy's `trusted_proxies` so rate limits see the visitor's address rather than the CDN's.

@@ -1,0 +1,13 @@
+{
+  "name": "happynails-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser tests against the running development stack. Run with `pnpm e2e` from the repo root.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.5"
+  }
+}

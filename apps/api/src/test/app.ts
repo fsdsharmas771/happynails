@@ -4,6 +4,7 @@ import { pino } from "pino";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createApp } from "../app";
+import type { RateLimits } from "../middleware/rateLimits";
 import { createLocalUploadProvider } from "../uploads/provider";
 import type { ShippingProvider } from "../shipping/shiprocket";
 import type { Jobs, NotificationJob } from "../jobs/types";
@@ -77,6 +78,7 @@ export interface TestAppOptions {
   now?: () => Date;
   siteUrl?: string;
   shipping?: ShippingProvider | null;
+  rateLimits?: RateLimits;
 }
 
 // Never connects: for tests that do not touch booking routes.
@@ -110,6 +112,7 @@ export function testApp(opts: TestAppOptions = {}) {
     },
     siteUrl: opts.siteUrl,
     shipping: { provider: opts.shipping ?? null, webhookToken: TEST_COURIER_TOKEN },
+    rateLimits: opts.rateLimits ?? false,
   });
 }
 

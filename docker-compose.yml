@@ -118,7 +118,28 @@ services:
     depends_on:
       - api
 
+  # Browser tests (Playwright) against the dev servers: pnpm e2e
+  # Creates real test orders and bookings, then cancels them through the admin API.
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    profiles: ["e2e"]
+    working_dir: /e2e
+    volumes:
+      - ./e2e:/e2e
+      - node_modules_e2e:/e2e/node_modules
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      E2E_WEB_URL: http://web:5173
+      E2E_ADMIN_URL: http://admin:5174
+    command: ["sh", "-c", "npm ci --no-audit --no-fund --loglevel=error && npx playwright test"]
+    depends_on:
+      - web
+      - admin
+
 volumes:
+  node_modules_e2e:
   mongo_data:
   redis_data:
   node_modules:
