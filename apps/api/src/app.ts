@@ -13,6 +13,7 @@ import type { OrderDeps } from "./orders/service";
 import type { BookingDeps } from "./bookings/engine";
 import { availabilityRouter, bookingsRouter, pincodeRouter, servicesRouter } from "./routes/bookings";
 import { adminRouter, testimonialsRouter } from "./routes/admin";
+import { seoRouter } from "./routes/seo";
 import type { AdminAuthConfig } from "./admin/auth";
 import type { UploadProvider } from "./uploads/provider";
 
@@ -23,11 +24,21 @@ export interface AppDeps {
   orders: OrderDeps;
   bookings: BookingDeps;
   admin: { auth: AdminAuthConfig; uploads: UploadProvider; uploadDir: string };
+  /** Public storefront address, for the sitemap. */
+  siteUrl?: string | undefined;
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
 
-export function createApp({ logger, allowedOrigins, checks, orders, bookings, admin }: AppDeps): Express {
+export function createApp({
+  logger,
+  allowedOrigins,
+  checks,
+  orders,
+  bookings,
+  admin,
+  siteUrl,
+}: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -58,6 +69,7 @@ export function createApp({ logger, allowedOrigins, checks, orders, bookings, ad
     express.static(admin.uploadDir, { maxAge: "365d", immutable: true, index: false, fallthrough: false }),
   );
 
+  app.use(seoRouter(siteUrl));
   app.use("/api/health", healthRouter(checks));
   app.use("/api/products", productsRouter());
   app.use("/api/shipping", shippingRouter());

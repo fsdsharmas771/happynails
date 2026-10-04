@@ -36,6 +36,7 @@ const app = createApp({
     uploads: createLocalUploadProvider(env.UPLOAD_DIR),
     uploadDir: env.UPLOAD_DIR,
   },
+  siteUrl: env.PUBLIC_SITE_URL,
 });
 
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, "api listening"));

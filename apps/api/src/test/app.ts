@@ -73,6 +73,7 @@ export interface TestAppOptions {
   redis?: Redis;
   keyPrefix?: string;
   now?: () => Date;
+  siteUrl?: string;
 }
 
 // Never connects: for tests that do not touch booking routes.
@@ -104,6 +105,7 @@ export function testApp(opts: TestAppOptions = {}) {
       uploads: createLocalUploadProvider(TEST_UPLOAD_DIR),
       uploadDir: TEST_UPLOAD_DIR,
     },
+    siteUrl: opts.siteUrl,
   });
 }
 

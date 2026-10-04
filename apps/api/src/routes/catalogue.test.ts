@@ -86,3 +86,26 @@ describe("POST /api/shipping/eta", () => {
     },
   );
 });
+
+describe("robots.txt and sitemap.xml", () => {
+  it("serves robots.txt and withholds the sitemap until the site address is known", async () => {
+    const robots = await request(app).get("/robots.txt");
+    expect(robots.text).toContain("Disallow: /checkout");
+    expect(robots.text).not.toContain("Sitemap:");
+    expect((await request(app).get("/sitemap.xml")).status).toBe(404);
+  });
+
+  it("lists the home page and every active set", async () => {
+    await seedProducts();
+    await Product.updateOne({ slug: "milk-bath" }, { active: false });
+    const site = testApp({ siteUrl: "https://shop.example/" });
+    const res = await request(site).get("/sitemap.xml");
+    expect(res.headers["content-type"]).toContain("application/xml");
+    expect(res.text).toContain("<loc>https://shop.example/</loc>");
+    expect(res.text).toContain("<loc>https://shop.example/?set=rose-chrome</loc>");
+    expect(res.text).not.toContain("milk-bath");
+    expect((await request(site).get("/robots.txt")).text).toContain(
+      "Sitemap: https://shop.example/sitemap.xml",
+    );
+  });
+});

@@ -20,6 +20,8 @@ const envSchema = z.object({
   ADMIN_OWNER_EMAIL: z.email().optional(),
   ADMIN_OWNER_PASSWORD: z.string().min(10).optional(),
   UPLOAD_DIR: z.string().default("/app/uploads"),
+  /** The storefront's public address, e.g. https://www.example.in. Needed for the sitemap. */
+  PUBLIC_SITE_URL: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
