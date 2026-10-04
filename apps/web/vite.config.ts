@@ -22,6 +22,7 @@ export default defineConfig({
     watch: process.env.WATCH_POLL === "true" ? { usePolling: true, interval: 300 } : undefined,
     proxy: {
       "/api": { target: process.env.API_PROXY_TARGET ?? "http://localhost:4000" },
+      "/uploads": { target: process.env.API_PROXY_TARGET ?? "http://localhost:4000" },
     },
   },
   preview: { port: 5173, strictPort: true },

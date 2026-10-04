@@ -1,0 +1,172 @@
+/*
+ * Form controls, option cards, messages and panels shared by the storefront and admin.
+ * Ported from docs/design-reference.html (class names kept). Import after base.css.
+ */
+.lbl,
+.field label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 10px 2px;
+  font: inherit;
+  color: var(--fg);
+  transition: border-color 0.3s;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.field .err {
+  color: var(--err);
+  font-size: 12px;
+  min-height: 1.2em;
+}
+.field.bad input,
+.field.bad textarea,
+.field.bad select {
+  border-color: var(--err);
+}
+.msg {
+  font-size: 13px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+}
+.msg.ok {
+  border-color: var(--ok);
+}
+.msg.no {
+  border-color: var(--err);
+}
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.opt {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  cursor: pointer;
+  border-radius: var(--r);
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+.opt:hover {
+  border-color: var(--fg);
+}
+.opt:has(input:checked) {
+  border-color: var(--gold);
+  background: var(--bg2);
+}
+.opt input {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  transition: border-color 0.2s;
+}
+.opt input[type="checkbox"] {
+  border-radius: 3px;
+}
+.opt input::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: scale(0);
+  transition: transform 0.25s var(--ease);
+}
+.opt input[type="checkbox"]::after {
+  border-radius: 1px;
+}
+.opt input:checked {
+  border-color: var(--gold);
+}
+.opt input:checked::after {
+  transform: scale(1);
+}
+.opt .t {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+.opt .t b {
+  font-weight: 600;
+}
+.opt .t span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.opt .pr {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Panels and sticky summaries. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: clamp(20px, 3vw, 36px);
+  transition: background 0.5s;
+}
+.sum {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sum h4 {
+  font-size: calc(26px * var(--hs));
+}
+.frm2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.ref {
+  font-family: var(--display);
+  font-size: calc(30px * var(--hs));
+  color: var(--gold);
+}
+@media (max-width: 960px) {
+  .sum {
+    position: static;
+  }
+}
+@media (max-width: 560px) {
+  .frm2 {
+    grid-template-columns: 1fr;
+  }
+}
