@@ -7,6 +7,7 @@ import { startQueues } from "./jobs/queues";
 import { createLogger } from "./logger";
 import { createRazorpayGateway } from "./payments/gateway";
 import { createLocalUploadProvider } from "./uploads/provider";
+import { createShiprocketProvider } from "./shipping/shiprocket";
 
 const env = loadEnv();
 const logger = createLogger(env);
@@ -51,6 +52,20 @@ const app = createApp({
     uploadDir: env.UPLOAD_DIR,
   },
   siteUrl: env.PUBLIC_SITE_URL,
+  shipping: {
+    provider:
+      env.SHIPROCKET_EMAIL && env.SHIPROCKET_PASSWORD && env.SHIPROCKET_PICKUP_LOCATION
+        ? createShiprocketProvider(
+            {
+              email: env.SHIPROCKET_EMAIL,
+              password: env.SHIPROCKET_PASSWORD,
+              pickupLocation: env.SHIPROCKET_PICKUP_LOCATION,
+            },
+            logger,
+          )
+        : null,
+    webhookToken: env.SHIPROCKET_WEBHOOK_TOKEN,
+  },
 });
 
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, "api listening"));

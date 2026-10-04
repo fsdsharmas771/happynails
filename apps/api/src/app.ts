@@ -14,6 +14,8 @@ import type { BookingDeps } from "./bookings/engine";
 import { availabilityRouter, bookingsRouter, pincodeRouter, servicesRouter } from "./routes/bookings";
 import { adminRouter, testimonialsRouter } from "./routes/admin";
 import { seoRouter } from "./routes/seo";
+import { courierWebhookRouter } from "./routes/courier";
+import type { ShippingProvider } from "./shipping/shiprocket";
 import type { AdminAuthConfig } from "./admin/auth";
 import type { UploadProvider } from "./uploads/provider";
 
@@ -26,6 +28,7 @@ export interface AppDeps {
   admin: { auth: AdminAuthConfig; uploads: UploadProvider; uploadDir: string };
   /** Public storefront address, for the sitemap. */
   siteUrl?: string | undefined;
+  shipping: { provider: ShippingProvider | null; webhookToken?: string | undefined };
 }
 
 const SAFE_REQUEST_ID = /^[\w-]{1,64}$/;
@@ -38,6 +41,7 @@ export function createApp({
   bookings,
   admin,
   siteUrl,
+  shipping,
 }: AppDeps): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -81,7 +85,11 @@ export function createApp({
   app.use("/api/bookings", bookingsRouter(bookings));
   app.use("/api/pincode", pincodeRouter());
   app.use("/api/testimonials", testimonialsRouter());
-  app.use("/api/admin", adminRouter({ auth: admin.auth, orders, bookings, uploads: admin.uploads }));
+  app.use("/api/webhooks", courierWebhookRouter(shipping.webhookToken, orders));
+  app.use(
+    "/api/admin",
+    adminRouter({ auth: admin.auth, orders, bookings, uploads: admin.uploads, shipping: shipping.provider }),
+  );
 
   app.use(notFound);
   app.use(errorHandler);

@@ -154,6 +154,11 @@ export function OrderDetailPage() {
   const [cancelNote, setCancelNote] = useState("");
   const [refund, setRefund] = useState({ amount: "", reason: "" });
 
+  const shipping = useQuery({
+    queryKey: ["shipping-status"],
+    queryFn: () => api.get<{ shiprocket: boolean }>("/shipping/status"),
+    staleTime: Infinity,
+  });
   const act = useMutation({
     mutationFn: (fn: () => Promise<Order>) => fn(),
     onSuccess: (o) => {
@@ -255,6 +260,26 @@ export function OrderDetailPage() {
           {next && (
             <section className="panel stack">
               <h2>Next step</h2>
+              {shipping.data?.shiprocket &&
+                (o.status === "placed" || o.status === "packed") &&
+                !o.tracking?.awb && (
+                  <div className="stack">
+                    <div>
+                      <button
+                        className="btn sm"
+                        type="button"
+                        disabled={act.isPending}
+                        onClick={() => act.mutate(() => api.post<Order>(`/orders/${id}/shiprocket`))}
+                      >
+                        {act.isPending ? "Booking courier…" : "Ship with Shiprocket"}
+                      </button>
+                    </div>
+                    <p className="note">
+                      Creates the shipment, assigns a courier and books the pickup. Tracking updates then move
+                      this order to shipped and delivered on their own. Or enter tracking by hand below.
+                    </p>
+                  </div>
+                )}
               {(o.status === "placed" || o.status === "packed") && (
                 <form className="stack" onSubmit={saveTracking}>
                   <div className="grid2">

@@ -5,9 +5,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createApp } from "../app";
 import { createLocalUploadProvider } from "../uploads/provider";
+import type { ShippingProvider } from "../shipping/shiprocket";
 import type { Jobs, NotificationJob } from "../jobs/types";
 import { createRazorpayGateway, type GatewayOrder, type PaymentGateway } from "../payments/gateway";
 
+export const TEST_COURIER_TOKEN = "test-courier-webhook-token";
 export const TEST_ADMIN_SECRET = "test-admin-secret-that-is-long-enough-123";
 export const TEST_UPLOAD_DIR = path.join(tmpdir(), "hn-test-uploads");
 
@@ -74,6 +76,7 @@ export interface TestAppOptions {
   keyPrefix?: string;
   now?: () => Date;
   siteUrl?: string;
+  shipping?: ShippingProvider | null;
 }
 
 // Never connects: for tests that do not touch booking routes.
@@ -106,6 +109,7 @@ export function testApp(opts: TestAppOptions = {}) {
       uploadDir: TEST_UPLOAD_DIR,
     },
     siteUrl: opts.siteUrl,
+    shipping: { provider: opts.shipping ?? null, webhookToken: TEST_COURIER_TOKEN },
   });
 }
 

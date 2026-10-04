@@ -22,6 +22,7 @@ function appWith(mongo = up, redis = up) {
       uploads: { save: async () => ({ url: "" }) },
       uploadDir: "/tmp",
     },
+    shipping: { provider: null },
   });
 }
 

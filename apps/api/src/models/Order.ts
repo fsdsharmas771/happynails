@@ -65,6 +65,8 @@ const orderSchema = new Schema(
     /** reserved: held for an unpaid order; committed: sold; released: returned to stock. */
     stockState: { type: String, required: true, enum: ["reserved", "committed", "released"] },
     tracking: { carrier: String, awb: String, url: String },
+    /** Shiprocket ids once a shipment is created there. */
+    shiprocket: { orderId: String, shipmentId: String },
     /** SHA-256 of the guest tracking token; the token itself is only ever in the customer's link. */
     trackTokenHash: { type: String, required: true },
     refunds: [

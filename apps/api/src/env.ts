@@ -30,6 +30,12 @@ const envSchema = z.object({
     .regex(/^v\d+\.\d+$/)
     .default("v23.0"),
   WHATSAPP_TEMPLATE_LANGUAGE: z.string().default("en"),
+  // Shiprocket API user. Email, password and pickup location together, or none.
+  SHIPROCKET_EMAIL: z.email().optional(),
+  SHIPROCKET_PASSWORD: z.string().min(1).optional(),
+  SHIPROCKET_PICKUP_LOCATION: z.string().min(1).optional(),
+  /** Shared secret Shiprocket sends as x-api-key on tracking webhooks. */
+  SHIPROCKET_WEBHOOK_TOKEN: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -73,7 +73,9 @@ import {
   listOrders,
   refundOrder,
   setTracking,
+  shipWithShiprocket,
 } from "../orders/admin";
+import type { ShippingProvider } from "../shipping/shiprocket";
 import type { OrderDeps } from "../orders/service";
 import { sniff, UPLOAD_LIMITS, type UploadKind, type UploadProvider } from "../uploads/provider";
 
@@ -82,6 +84,7 @@ export interface AdminDeps {
   orders: OrderDeps;
   bookings: BookingDeps;
   uploads: UploadProvider;
+  shipping: ShippingProvider | null;
 }
 
 const who = (req: Request) => req.admin!.name || req.admin!.email;
@@ -343,6 +346,12 @@ export function adminRouter(deps: AdminDeps): Router {
   });
   router.post("/orders/:id/tracking", async (req, res) => {
     res.json(await setTracking(idParam(req), trackingSchema.parse(req.body)));
+  });
+  router.post("/orders/:id/shiprocket", async (req, res) => {
+    res.json(await shipWithShiprocket(idParam(req), deps.shipping, who(req)));
+  });
+  router.get("/shipping/status", (_req, res) => {
+    res.json({ shiprocket: !!deps.shipping });
   });
   router.post("/orders/:id/cancel", async (req, res) => {
     res.json(await cancelOrder(idParam(req), cancelSchema.parse(req.body).note, who(req)));
