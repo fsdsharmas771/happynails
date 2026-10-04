@@ -98,6 +98,8 @@ export function adminRouter(deps: AdminDeps): Router {
   const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 10,
+    // Only failed attempts count, so signing in often never locks the owner out.
+    skipSuccessfulRequests: true,
     standardHeaders: "draft-7",
     legacyHeaders: false,
     handler: () => {
