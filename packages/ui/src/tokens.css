@@ -1,5 +1,6 @@
 /*
- * Design tokens, ported verbatim from docs/design-reference.html.
+ * Design tokens, ported from docs/design-reference.html. One deliberate change: the light theme's
+ * gold is 4% darker (#7A6B40 to #75673D) so small gold text passes WCAG AA contrast on --bg2.
  * Light = Atelier Ivory (pale gallery ground, ink, gold leaf, Bodoni).
  * Dark  = Noir Rosé (espresso, rose gold, Cormorant).
  * Theme follows prefers-color-scheme until the user picks one, which sets data-theme on <html>.
@@ -13,9 +14,9 @@
   --line: #d8d4cf;
   --accent: #2e2b2b;
   --accentfg: #f4f3f1;
-  --hover: #7a6b40;
+  --hover: #75673d;
   --hoverfg: #ffffff;
-  --gold: #7a6b40;
+  --gold: #75673d;
   --blush: #eaddda;
   --ok: #3f6b4a;
   --err: #a23a33;
