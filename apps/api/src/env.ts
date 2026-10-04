@@ -22,6 +22,14 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default("/app/uploads"),
   /** The storefront's public address, e.g. https://www.example.in. Needed for the sitemap. */
   PUBLIC_SITE_URL: z.url().optional(),
+  // Meta WhatsApp Cloud API. Without a token and phone number id, messages are only logged.
+  WHATSAPP_ACCESS_TOKEN: z.string().min(1).optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().regex(/^\d+$/).optional(),
+  WHATSAPP_API_VERSION: z
+    .string()
+    .regex(/^v\d+\.\d+$/)
+    .default("v23.0"),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().default("en"),
 });
 
 export type Env = z.infer<typeof envSchema>;

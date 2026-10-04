@@ -2,7 +2,7 @@ import { createApp } from "./app";
 import { connectMongo, disconnectMongo, pingMongo } from "./db/mongo";
 import { createRedis, pingRedis } from "./db/redis";
 import { loadEnv } from "./env";
-import { createLogNotifier } from "./jobs/notifier";
+import { createLogNotifier, createWhatsAppCloudNotifier } from "./jobs/notifier";
 import { startQueues } from "./jobs/queues";
 import { createLogger } from "./logger";
 import { createRazorpayGateway } from "./payments/gateway";
@@ -22,8 +22,22 @@ const gateway =
     : null;
 if (!gateway) logger.warn("Razorpay keys not set: online payment disabled, so checkout cannot complete");
 
-// Real WhatsApp and email providers arrive behind env flags later; until then messages are logged.
-const jobs = startQueues(env.REDIS_URL, createLogNotifier(logger), logger);
+// WhatsApp Cloud API when configured; otherwise messages are logged (development).
+const notifier =
+  env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID
+    ? createWhatsAppCloudNotifier(
+        {
+          accessToken: env.WHATSAPP_ACCESS_TOKEN,
+          phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+          apiVersion: env.WHATSAPP_API_VERSION,
+          language: env.WHATSAPP_TEMPLATE_LANGUAGE,
+        },
+        logger,
+      )
+    : createLogNotifier(logger);
+if (!env.WHATSAPP_ACCESS_TOKEN)
+  logger.warn("WhatsApp not configured: customer messages are logged, not sent");
+const jobs = startQueues(env.REDIS_URL, notifier, logger);
 
 const app = createApp({
   logger,

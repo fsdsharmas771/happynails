@@ -6,6 +6,7 @@ import { Booking } from "../models/Booking";
 import { Order } from "../models/Order";
 import { cancelUnpaidBooking } from "../bookings/engine";
 import { cancelUnpaid } from "../orders/service";
+import { buildMessage, toWhatsAppNumber, type WhatsAppMessage } from "../config/whatsapp";
 import type { Notifier } from "./notifier";
 import type { Jobs, NotificationJob } from "./types";
 
@@ -17,38 +18,58 @@ type MaintenanceJob =
 const ATTEMPTS = { attempts: 5, backoff: { type: "exponential", delay: 5000 } } as const;
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
-const visitWhen = (d: Date) =>
-  `${new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short" }).format(d)}, ${formatIstTime(istTimeOf(d))}`;
+const visitDay = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
+/** "Sat 4 Oct, 10:00 am" in India time. */
+const visitWhen = (d: Date) => {
+  const p = Object.fromEntries(visitDay.formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.weekday} ${p.day} ${p.month}, ${formatIstTime(istTimeOf(d))}`;
+};
 
-async function sendNotification(job: NotificationJob, notifier: Notifier): Promise<void> {
+/** The WhatsApp template and parameters for one notification, or null if its record is gone. */
+export async function messageFor(
+  job: NotificationJob,
+): Promise<{ to: string; message: WhatsAppMessage } | null> {
   if (job.type === "order_placed" || job.type === "order_shipped") {
     const order = await Order.findById(job.orderId).lean();
-    if (!order) return;
+    if (!order) return null;
     const first = firstName(order.customer.name);
-    if (job.type === "order_placed") {
-      const msg = `Hi ${first}, your Happy Nails order ${order.number} (${formatINR(order.totalPaise)}) is placed. We will message you when it ships.`;
-      await notifier.sendWhatsApp(order.customer.phone, msg);
-      await notifier.sendEmail(order.customer.email, `Order ${order.number} placed`, msg);
-    } else {
-      const link = order.tracking?.url ? ` Track it here: ${order.tracking.url}` : "";
-      const msg = `Hi ${first}, your Happy Nails order ${order.number} has shipped.${link}`;
-      await notifier.sendWhatsApp(order.customer.phone, msg);
-      await notifier.sendEmail(order.customer.email, `Order ${order.number} shipped`, msg);
-    }
-    return;
+    const message =
+      job.type === "order_placed"
+        ? buildMessage("order_placed", [first, order.number, formatINR(order.totalPaise)])
+        : buildMessage("order_shipped", [
+            first,
+            order.number,
+            order.tracking?.carrier || "our courier",
+            order.tracking?.url || `awb ${order.tracking?.awb ?? ""}`,
+          ]);
+    return { to: toWhatsAppNumber(order.customer.phone), message };
   }
 
-  // Bookings have a phone number only, so they go out on WhatsApp.
   const booking = await Booking.findById(job.bookingId).lean();
-  if (!booking) return;
+  if (!booking) return null;
   const first = firstName(booking.customer.name);
   const when = visitWhen(booking.startsAt);
-  const text = {
-    booking_confirmed: `Hi ${first}, your Happy Nails home visit ${booking.number} is booked for ${when} in ${booking.city}. Pay after your visit.`,
-    booking_reminder: `Hi ${first}, a reminder that your Happy Nails home visit is tomorrow, ${when}.`,
-    booking_cancelled: `Hi ${first}, your Happy Nails home visit ${booking.number} on ${when} has been cancelled.`,
-  }[job.type];
-  await notifier.sendWhatsApp(booking.customer.phone, text);
+  const payNote =
+    booking.payment.status === "captured"
+      ? "Paid online, nothing to pay at the visit."
+      : "Pay after your visit by UPI or cash.";
+  const message =
+    job.type === "booking_confirmed"
+      ? buildMessage("booking_confirmed", [first, booking.number, when, booking.city, payNote])
+      : job.type === "booking_reminder"
+        ? buildMessage("booking_reminder", [first, when])
+        : buildMessage("booking_cancelled", [first, booking.number, when]);
+  return { to: toWhatsAppNumber(booking.customer.phone), message };
+}
+
+async function sendNotification(job: NotificationJob, notifier: Notifier): Promise<void> {
+  const m = await messageFor(job);
+  if (m) await notifier.sendWhatsApp(m.to, m.message);
 }
 
 /**
