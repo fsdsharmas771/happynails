@@ -1,9 +1,9 @@
-import { VISIT_CITIES } from "@happynails/shared";
+import { BUSINESS, VISIT_CITIES } from "@happynails/shared";
 import { Addon, AvailabilityRule, Service, Technician } from "../models/Booking";
 
 /**
  * Home-visit services and add-ons from the design prototype.
- * PLACEHOLDER: every price and duration below is a stand-in until the owner confirms them.
+ * Prices and durations confirmed by the owner (2026-10-04); editable in the admin.
  */
 export const SEED_SERVICES = [
   {
@@ -40,13 +40,11 @@ export const SEED_ADDONS = [
 ].map((a, i) => ({ ...a, sortOrder: (i + 1) * 10 }));
 
 /**
- * PLACEHOLDER technicians and working hours so the calendar has something to show before the
- * owner adds the real team in the admin. Names say so plainly; replace or deactivate them.
- * Slot times are the examples from the build plan; every day of the week, as in the prototype.
+ * Anamika does every visit (owner, 2026-10-04) and can work any hours: these default start times
+ * every day are only a starting point; she sets her real availability in the admin calendar.
  */
 export const SEED_TECHNICIANS = [
-  { name: "Placeholder technician A", phone: "0000000000", cities: [...VISIT_CITIES] },
-  { name: "Placeholder technician B", phone: "0000000000", cities: [...VISIT_CITIES] },
+  { name: "Anamika", phone: BUSINESS.whatsappNumber.slice(2), cities: [...VISIT_CITIES] },
 ];
 export const SEED_SLOT_TIMES = ["10:00", "12:30", "15:00", "17:30", "19:30"];
 

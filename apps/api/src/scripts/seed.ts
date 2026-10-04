@@ -18,6 +18,6 @@ await connectMongo(env.MONGO_URL, logger, 3);
 // Build indexes (including the double-booking guard) before inserting anything.
 await Promise.all(Object.values(mongoose.models).map((m) => m.init()));
 logger.info(await seedProducts(), "seeded products");
-logger.info(await seedBookingSetup(), "seeded services, add-ons and placeholder technicians");
+logger.info(await seedBookingSetup(), "seeded services, add-ons and technician");
 logger.info(await seedOwner(env.ADMIN_OWNER_EMAIL, env.ADMIN_OWNER_PASSWORD));
 await disconnectMongo();

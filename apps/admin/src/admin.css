@@ -420,3 +420,79 @@ table.t tr.click:hover td {
 tr[aria-selected="true"] td {
   background: var(--bg2);
 }
+
+/* Availability calendar */
+.calgrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.calgrid .dow {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.calday {
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  padding: 6px 7px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.calday b {
+  font-size: 14px;
+  color: var(--fg);
+  font-weight: 600;
+}
+.calday i {
+  font-style: normal;
+  color: var(--gold);
+  font-weight: 600;
+}
+.calday.custom {
+  border-color: var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+.calday.blocked,
+.calday.off {
+  background: repeating-linear-gradient(135deg, transparent 0 6px, var(--line) 6px 7px);
+}
+.calday.today {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+.calday.past {
+  opacity: 0.55;
+}
+.calday[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.calday[aria-pressed="true"] b,
+.calday[aria-pressed="true"] i {
+  color: var(--bg);
+}
+.legend-a {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.legend-a .calday {
+  min-height: 0;
+  padding: 3px 10px;
+}
+@media (max-width: 560px) {
+  .calday {
+    min-height: 54px;
+    font-size: 9px;
+    padding: 4px;
+  }
+}

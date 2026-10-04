@@ -1,22 +1,20 @@
-import { VISIT_CITIES } from "@happynails/shared";
+import { BUSINESS, VISIT_CITIES } from "@happynails/shared";
 
 /**
  * Storefront facts that are not in the database.
  * Anything marked PLACEHOLDER has not been confirmed by the owner and must be replaced before launch.
  */
 export const SITE = {
-  name: "Happy Nails",
-  byline: "by Anamika",
+  name: BUSINESS.brand,
+  byline: BUSINESS.byline,
   visitCities: VISIT_CITIES,
-  // Owner decision (2026-10-04): pay online when booking, or after the visit by UPI or cash.
-  // PLACEHOLDER: "Travel is included within Delhi NCR" (from the prototype) is not confirmed by the owner.
+  // Owner-confirmed (2026-10-04): pay now or after the visit; travel included in Delhi, Noida and Gurgaon.
   bookingPaymentNote:
-    "Pay online now, or after your visit by UPI or cash. Travel is included within Delhi NCR.",
+    "Pay online now, or after your visit by UPI or cash. Travel is included in Delhi, Noida and Gurgaon.",
   contact: {
-    // PLACEHOLDER: real WhatsApp number not provided yet.
-    whatsappDisplay: "+91 00000 00000",
-    // PLACEHOLDER: real Instagram handle not confirmed yet.
-    instagramHandle: "@happynails",
+    whatsappDisplay: BUSINESS.phoneDisplay,
+    whatsappLink: `https://wa.me/${BUSINESS.whatsappNumber}`,
+    phoneDisplay: BUSINESS.phoneDisplay,
   },
 } as const;
 

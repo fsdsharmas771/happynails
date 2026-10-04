@@ -35,6 +35,7 @@ import type { Jobs } from "../jobs/types";
 import {
   Addon,
   AvailabilityBlock,
+  AvailabilityOverride,
   AvailabilityRule,
   Booking,
   Service,
@@ -109,36 +110,74 @@ async function techsFor(city: VisitCity) {
 }
 
 /** Working grids per technician per day, after rules and blocks. */
-async function schedules(techIds: Types.ObjectId[], dates: IstDate[]): Promise<TechDay[]> {
+export type DaySource = "weekly" | "custom" | "blocked" | "off";
+
+export interface EffectiveDay {
+  techId: string;
+  date: IstDate;
+  /** Where the times come from: a date set by hand, a leave block, the weekly pattern, or nothing. */
+  source: DaySource;
+  /** Sorted slot start times worked that day (empty when not working). */
+  grid: IstTime[];
+  note?: string;
+}
+
+/**
+ * Each technician's working day, most specific setting first: a date set by hand in the admin
+ * calendar, then leave blocks, then the weekly pattern.
+ */
+export async function effectiveDays(
+  techIds: (Types.ObjectId | string)[],
+  dates: IstDate[],
+): Promise<EffectiveDay[]> {
   if (!techIds.length || !dates.length) return [];
   const first = dates[0]!;
   const last = dates[dates.length - 1]!;
-  const [rules, blocks] = await Promise.all([
+  const [rules, blocks, overrides] = await Promise.all([
     AvailabilityRule.find({ technicianId: { $in: techIds } }).lean(),
     AvailabilityBlock.find({
       technicianId: { $in: techIds },
       fromDate: { $lte: last },
       toDate: { $gte: first },
     }).lean(),
+    AvailabilityOverride.find({ technicianId: { $in: techIds }, date: { $gte: first, $lte: last } }).lean(),
   ]);
-  const out: TechDay[] = [];
+  const out: EffectiveDay[] = [];
   for (const techId of techIds.map(String)) {
     for (const date of dates) {
-      const weekday = istWeekday(date);
-      const blocked = blocks.some(
+      const override = overrides.find((o) => String(o.technicianId) === techId && o.date === date);
+      if (override) {
+        out.push({
+          techId,
+          date,
+          source: "custom",
+          grid: [...new Set(override.slotTimes)].sort(),
+          note: override.note,
+        });
+        continue;
+      }
+      const block = blocks.find(
         (b) => String(b.technicianId) === techId && b.fromDate <= date && b.toDate >= date,
       );
-      if (blocked) continue;
+      if (block) {
+        out.push({ techId, date, source: "blocked", grid: [], note: block.reason });
+        continue;
+      }
+      const weekday = istWeekday(date);
       const times = new Set<IstTime>();
       for (const r of rules) {
         if (String(r.technicianId) !== techId || r.weekday !== weekday) continue;
         if ((r.validFrom && date < r.validFrom) || (r.validTo && date > r.validTo)) continue;
         r.slotTimes.forEach((t) => times.add(t));
       }
-      if (times.size) out.push({ techId, date, grid: [...times].sort() });
+      out.push({ techId, date, source: times.size ? "weekly" : "off", grid: [...times].sort() });
     }
   }
   return out;
+}
+
+async function schedules(techIds: Types.ObjectId[], dates: IstDate[]): Promise<TechDay[]> {
+  return (await effectiveDays(techIds, dates)).filter((d) => d.grid.length > 0);
 }
 
 /** Visits that keep each technician busy in a window, widened by the longest travel gap. */

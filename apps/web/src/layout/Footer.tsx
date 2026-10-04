@@ -1,3 +1,4 @@
+import { BUSINESS } from "@happynails/shared";
 import { useTheme } from "@happynails/ui";
 import { useBagDrawer } from "../cart/store";
 import { SITE } from "../config/site";
@@ -39,14 +40,19 @@ export function Footer() {
           <div>
             <h4>Talk to us</h4>
             <ul>
-              <li>WhatsApp {SITE.contact.whatsappDisplay}</li>
-              <li>Instagram {SITE.contact.instagramHandle}</li>
+              <li>
+                WhatsApp or call{" "}
+                <a href={SITE.contact.whatsappLink} target="_blank" rel="noopener noreferrer">
+                  {SITE.contact.whatsappDisplay}
+                </a>
+              </li>
             </ul>
           </div>
         </div>
         <div className="legal">
           <span>
-            {SITE.name} {SITE.byline}.
+            &copy; {new Date().getFullYear()} {BUSINESS.legalName}. All rights reserved. {SITE.name} is a
+            brand of {BUSINESS.legalName}. GSTIN {BUSINESS.gstin}.
           </span>
           <button className="tlink" type="button" onClick={toggle}>
             Switch theme

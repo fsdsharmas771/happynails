@@ -71,6 +71,22 @@ const availabilityBlockSchema = new Schema(
 );
 export const AvailabilityBlock = model("AvailabilityBlock", availabilityBlockSchema);
 
+/**
+ * One date set by hand in the admin calendar: exactly these start times that day (empty = closed).
+ * The most specific setting, so it wins over leave blocks and the weekly pattern.
+ */
+const availabilityOverrideSchema = new Schema(
+  {
+    technicianId: { type: Schema.Types.ObjectId, ref: "Technician", required: true },
+    date: { type: String, required: true, match: IST_DATE },
+    slotTimes: { type: [{ type: String, match: IST_TIME }], default: [] },
+    note: { type: String, default: "" },
+  },
+  { timestamps: true },
+);
+availabilityOverrideSchema.index({ technicianId: 1, date: 1 }, { unique: true });
+export const AvailabilityOverride = model("AvailabilityOverride", availabilityOverrideSchema);
+
 /** Statuses that hold a technician: an unpaid online booking blocks its slot until it expires. */
 export const SLOT_BLOCKING_STATUSES = ["confirmed", "pending_payment"] as const;
 

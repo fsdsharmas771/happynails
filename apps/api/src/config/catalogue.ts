@@ -2,7 +2,8 @@ import type { SizingOption } from "@happynails/shared";
 
 /**
  * Sizing choices offered on every set. The server owns these prices; the storefront only displays them.
- * PLACEHOLDER: kit contents and the custom-fit fee come from the design prototype and are not confirmed.
+ * Custom-fit fee confirmed by the owner (2026-10-04). PLACEHOLDER: the kit contents in the
+ * descriptions are not confirmed yet.
  */
 export const SIZING_OPTIONS: readonly SizingOption[] = [
   {

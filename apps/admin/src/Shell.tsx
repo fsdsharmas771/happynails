@@ -8,6 +8,7 @@ const LINKS = [
   { to: "/", label: "Today", end: true },
   { to: "/orders", label: "Orders" },
   { to: "/bookings", label: "Bookings" },
+  { to: "/availability", label: "Availability" },
   { to: "/products", label: "Products" },
   { to: "/technicians", label: "Technicians" },
   { to: "/services", label: "Services" },

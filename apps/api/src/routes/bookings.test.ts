@@ -8,7 +8,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 import { queueBookingReminders } from "../jobs/queues";
 import { AvailabilityBlock, AvailabilityRule, Booking, Service, Technician, Addon } from "../models/Booking";
-import { seedBookingSetup } from "../seed/bookings";
+import { seedTwoTechnicians } from "../test/fixtures";
 import { cancelUnpaidBooking } from "../bookings/engine";
 import { travelSide, visitsClash } from "../config/bookings";
 import { fakeGateway, fakeJobs, signPayment, signWebhook, testApp, type FakeJobs } from "../test/app";
@@ -25,7 +25,7 @@ let app: ReturnType<typeof testApp>;
 let ids: { manicure: string; gelx: string; nailArt: string; removal: string; techA: string; techB: string };
 
 beforeEach(async () => {
-  await seedBookingSetup();
+  await seedTwoTechnicians();
   jobs = fakeJobs();
   app = testApp({ redis, keyPrefix, jobs, now: () => NOW });
   const svc = async (name: string) => String((await Service.findOne({ name }).lean())!._id);

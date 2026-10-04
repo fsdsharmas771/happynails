@@ -4,7 +4,7 @@ import { OCCASIONS, productImageSchema, slugSchema } from "./catalogue";
 import { indianMobileSchema, ORDER_STATUSES } from "./checkout";
 import { hexColorSchema, nailFinishSchema, nailShapeSchema } from "./nail";
 import { VISIT_CITIES } from "./pincode";
-import { IST_DATE, IST_TIME } from "./time";
+import { IST_DATE, IST_MONTH, IST_TIME } from "./time";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/, "Invalid id");
 const paise = z.number().int().nonnegative();
@@ -161,3 +161,15 @@ export const publicTestimonialSchema = z.object({
   posterUrl: z.string(),
 });
 export type PublicTestimonial = z.infer<typeof publicTestimonialSchema>;
+
+// ---------- availability calendar ----------
+
+export const calendarQuerySchema = z.object({
+  technicianId: objectId,
+  month: z.string().regex(IST_MONTH),
+});
+/** Exactly these start times on one date; an empty list closes the day. */
+export const calendarDaySchema = z.object({
+  slotTimes: z.array(z.string().regex(IST_TIME, "Use 24-hour times like 10:00")).max(24),
+  note: z.string().trim().max(200).default(""),
+});

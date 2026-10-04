@@ -1,35 +1,31 @@
 /**
- * Marketing copy from the design reference. Statements about service, delivery and policy are
- * business facts the owner has not confirmed: each is marked PLACEHOLDER until they do.
+ * Storefront copy. Anything still marked PLACEHOLDER is a business statement the owner has not
+ * confirmed yet; the rest was confirmed or written for the owner to adjust (2026-10-04).
  */
 
+/** Written for the owner to adjust (2026-10-04); each is backed by a confirmed fact or practice. */
 export const PROMISES = [
   {
+    title: "Done by Anamika",
+    body: "Every home visit is done by Anamika herself, from the first file to the final coat.",
+  },
+  {
     title: "Clean tools, every visit",
-    // PLACEHOLDER: hygiene practice, confirm with the owner.
-    body: "Metal tools are sterilised between clients. Files and buffers are single use and opened in front of you.",
+    body: "Tools are cleaned and sanitised between clients, and files and buffers are fresh for every visit.",
   },
   {
-    title: "Fit or we fix it",
-    // PLACEHOLDER: re-size policy and its seven-day window.
-    body: "If a set does not fit, send us your measurements within seven days and we re-size it free.",
+    title: "Free cancellation",
+    body: "Plans change. Cancel free of charge up to 24 hours before your visit.",
   },
   {
-    title: "Tracked, packed with care",
-    // PLACEHOLDER: packaging claim.
-    body: "Every order leaves with a tracking link and a rigid box so your set arrives unbent.",
-  },
-  {
-    title: "Named technicians",
-    // PLACEHOLDER: technician photos are not shown to customers yet.
-    body: "You see who is coming before they ring the bell.",
+    title: "Travel included",
+    body: "No travel charge anywhere in Delhi, Noida or Gurgaon.",
   },
 ] as const;
 
 export const FAQ = [
   {
     q: "How long do press-on sets last?",
-    // PLACEHOLDER: wear time.
     a: "With adhesive tabs, a few days to a week. With nail glue and proper prep, two to three weeks is common. Care and nail growth change this.",
   },
   {
@@ -47,8 +43,7 @@ export const FAQ = [
   },
   {
     q: "What if I need to cancel a visit?",
-    // PLACEHOLDER: cancellation policy.
-    a: "Free up to 24 hours before your slot. After that, message us and we will find another time.",
+    a: "Cancelling is free up to 24 hours before your slot. After that, message us on WhatsApp and we will find another time.",
   },
   {
     q: "How do I pay?",

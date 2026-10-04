@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { ThemeProvider } from "@happynails/ui";
 import { AuthGate } from "./auth";
 import { ApiError } from "./lib/api";
+import { AvailabilityPage } from "./pages/Availability";
 import { BookingsPage } from "./pages/Bookings";
 import { ServicesPage, TestimonialsPage } from "./pages/Content";
 import { DashboardPage } from "./pages/Dashboard";
@@ -38,6 +39,7 @@ export function App() {
                 <Route path="orders" element={<OrdersPage />} />
                 <Route path="orders/:id" element={<OrderDetailPage />} />
                 <Route path="bookings" element={<BookingsPage />} />
+                <Route path="availability" element={<AvailabilityPage />} />
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="technicians" element={<TechniciansPage />} />
                 <Route path="services" element={<ServicesPage />} />

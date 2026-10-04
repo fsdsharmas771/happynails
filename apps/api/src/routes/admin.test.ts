@@ -1,4 +1,4 @@
-import { istToUtc } from "@happynails/shared";
+import { istDateOf, istToUtc } from "@happynails/shared";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 import { hashPassword } from "../admin/auth";
@@ -6,7 +6,7 @@ import { AdminUser, Testimonial } from "../models/Admin";
 import { AvailabilityRule, Booking, Service, Technician } from "../models/Booking";
 import { Order } from "../models/Order";
 import { Product } from "../models/Product";
-import { seedBookingSetup } from "../seed/bookings";
+import { seedTwoTechnicians } from "../test/fixtures";
 import { seedProducts } from "../seed/seedProducts";
 import { fakeGateway, fakeJobs, signWebhook, testApp, type FakeJobs } from "../test/app";
 import { useTestDb } from "../test/db";
@@ -25,7 +25,7 @@ let gw: ReturnType<typeof fakeGateway>;
 
 beforeEach(async () => {
   await seedProducts();
-  await seedBookingSetup();
+  await seedTwoTechnicians();
   await AdminUser.create([
     { ...OWNER, name: "Anamika", role: "owner", passwordHash: await hashPassword(OWNER.password) },
     { ...STAFF, name: "Priya", role: "staff", passwordHash: await hashPassword(STAFF.password) },
@@ -356,6 +356,92 @@ describe("bookings", () => {
 
     const dash = await owner.get("/api/admin/dashboard");
     expect(dash.body).toMatchObject({ needsRefund: 0, ordersToPack: { count: 0 } });
+  });
+});
+
+describe("availability calendar", () => {
+  it("sets custom times for a date, closes a day, and resets to the weekly pattern", async () => {
+    const owner = await signIn(OWNER);
+    // Only Anamika, so public availability reflects her calendar alone.
+    await Technician.updateMany({ name: { $ne: "Anamika" } }, { active: false });
+    const anamika = (await Technician.findOne({ name: "Anamika" }).lean())!;
+    const date = istDateOf(new Date(Date.now() + 10 * 86_400_000));
+    const month = date.slice(0, 7);
+    const service = (await Service.findOne({ name: "Gel manicure" }).lean())!;
+    const openTimes = async () => {
+      const a = await request(app)
+        .get("/api/availability")
+        .query({ city: "Delhi", serviceId: String(service._id), month });
+      return a.body.days
+        .find((d: { date: string }) => d.date === date)
+        .slots.filter((s: { open: boolean }) => s.open)
+        .map((s: { time: string }) => s.time);
+    };
+    const day = async () =>
+      (await owner.get("/api/admin/calendar").query({ technicianId: String(anamika._id), month })).body.find(
+        (d: { date: string }) => d.date === date,
+      );
+
+    expect(await day()).toMatchObject({
+      source: "weekly",
+      slotTimes: ["10:00", "12:30", "15:00", "17:30", "19:30"],
+    });
+
+    await owner
+      .put(`/api/admin/calendar/${anamika._id}/${date}`)
+      .set(H)
+      .send({ slotTimes: ["21:00", "08:00", "08:00"], note: "Early start" })
+      .expect(200);
+    expect(await day()).toMatchObject({
+      source: "custom",
+      slotTimes: ["08:00", "21:00"],
+      note: "Early start",
+    });
+    expect(await openTimes()).toEqual(["08:00", "21:00"]);
+
+    await owner.put(`/api/admin/calendar/${anamika._id}/${date}`).set(H).send({ slotTimes: [] }).expect(200);
+    expect(await openTimes()).toEqual([]);
+
+    await owner.delete(`/api/admin/calendar/${anamika._id}/${date}`).set(H).expect(204);
+    expect((await day()).source).toBe("weekly");
+    expect(await openTimes()).toHaveLength(5);
+
+    const staff = await signIn(STAFF);
+    expect(
+      (await staff.put(`/api/admin/calendar/${anamika._id}/${date}`).set(H).send({ slotTimes: [] })).status,
+    ).toBe(403);
+    expect(
+      (
+        await owner
+          .put(`/api/admin/calendar/${anamika._id}/${date}`)
+          .set(H)
+          .send({ slotTimes: ["9am"] })
+      ).status,
+    ).toBe(400);
+  });
+
+  it("a date set by hand wins over a leave block", async () => {
+    const owner = await signIn(OWNER);
+    const anamika = (await Technician.findOne({ name: "Anamika" }).lean())!;
+    await owner
+      .post(`/api/admin/technicians/${anamika._id}/blocks`)
+      .set(H)
+      .send({ fromDate: "2030-03-01", toDate: "2030-03-10", reason: "Travel" });
+    await owner
+      .put(`/api/admin/calendar/${anamika._id}/2030-03-05`)
+      .set(H)
+      .send({ slotTimes: ["12:00"] });
+    const cal = (
+      await owner.get("/api/admin/calendar").query({ technicianId: String(anamika._id), month: "2030-03" })
+    ).body;
+    expect(cal.find((d: { date: string }) => d.date === "2030-03-04")).toMatchObject({
+      source: "blocked",
+      slotTimes: [],
+    });
+    expect(cal.find((d: { date: string }) => d.date === "2030-03-05")).toMatchObject({
+      source: "custom",
+      slotTimes: ["12:00"],
+    });
   });
 });
 

@@ -6,7 +6,7 @@ type SeedProduct = Omit<ProductAttrs, "createdAt" | "updatedAt" | "images" | "ac
 
 /**
  * The ten sets from the design prototype. Names, colours, shapes, finishes and copy are as designed.
- * PLACEHOLDER: every pricePaise and stock value below is a stand-in until the owner confirms real figures.
+ * Prices confirmed by the owner (2026-10-04). Stock is a starting figure, managed in the admin.
  */
 export const SEED_PRODUCTS: SeedProduct[] = [
   {

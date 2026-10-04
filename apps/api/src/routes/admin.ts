@@ -6,6 +6,10 @@ import {
   adminOrderQuerySchema,
   adminProductInputSchema,
   blockInputSchema,
+  calendarDaySchema,
+  calendarQuerySchema,
+  IST_DATE,
+  daysOfMonth,
   cancelSchema,
   istDateOf,
   istToUtc,
@@ -46,7 +50,16 @@ import {
 import type { BookingDeps } from "../bookings/engine";
 import { HttpError } from "../errors";
 import { Testimonial } from "../models/Admin";
-import { Addon, AvailabilityBlock, AvailabilityRule, Booking, Service, Technician } from "../models/Booking";
+import {
+  Addon,
+  AvailabilityBlock,
+  AvailabilityOverride,
+  AvailabilityRule,
+  Booking,
+  Service,
+  Technician,
+} from "../models/Booking";
+import { effectiveDays } from "../bookings/engine";
 import { Order } from "../models/Order";
 import { Product } from "../models/Product";
 import {
@@ -362,6 +375,65 @@ export function adminRouter(deps: AdminDeps): Router {
   });
   router.post("/bookings/:id/refund", requireOwner, async (req, res) => {
     res.json(await refundBooking(idParam(req), refundSchema.parse(req.body), who(req), deps.bookings));
+  });
+
+  // ---------- availability calendar ----------
+  // A month per technician: each day's working times (and where they come from) with its bookings.
+  router.get("/calendar", async (req, res) => {
+    const q = calendarQuerySchema.parse(req.query);
+    const dates = daysOfMonth(q.month);
+    const [days, bookings] = await Promise.all([
+      effectiveDays([q.technicianId], dates),
+      Booking.find({
+        technicianId: q.technicianId,
+        status: { $in: ["confirmed", "pending_payment", "completed"] },
+        startsAt: {
+          $gte: istToUtc(dates[0]!, "00:00"),
+          $lt: istToUtc(addIstDays(dates[dates.length - 1]!, 1), "00:00"),
+        },
+      })
+        .sort({ startsAt: 1 })
+        .select({ number: 1, startsAt: 1, endsAt: 1, city: 1, customer: 1, status: 1, serviceName: 1 })
+        .lean(),
+    ]);
+    res.json(
+      days.map((d) => ({
+        date: d.date,
+        source: d.source,
+        slotTimes: d.grid,
+        note: d.note ?? "",
+        bookings: bookings
+          .filter((b) => istDateOf(b.startsAt) === d.date)
+          .map((b) => ({
+            id: String(b._id),
+            number: b.number,
+            startsAt: b.startsAt,
+            endsAt: b.endsAt,
+            city: b.city,
+            customerName: b.customer.name,
+            serviceName: b.serviceName,
+            status: b.status,
+          })),
+      })),
+    );
+  });
+
+  router.put("/calendar/:id/:date", requireOwner, async (req, res) => {
+    const id = idParam(req);
+    const date = z.string().regex(IST_DATE).parse(req.params.date);
+    await found(Technician.findById(id), "technician");
+    const { slotTimes, note } = calendarDaySchema.parse(req.body);
+    await AvailabilityOverride.updateOne(
+      { technicianId: id, date },
+      { $set: { slotTimes: [...new Set(slotTimes)].sort(), note } },
+      { upsert: true },
+    );
+    res.json({ ok: true });
+  });
+
+  router.delete("/calendar/:id/:date", requireOwner, async (req, res) => {
+    await AvailabilityOverride.deleteOne({ technicianId: idParam(req), date: String(req.params.date) });
+    res.status(204).end();
   });
 
   // ---------- technicians and their hours ----------
