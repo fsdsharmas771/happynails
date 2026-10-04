@@ -108,12 +108,43 @@ Customers track orders at `/order/<number>?token=<token>`; the token is in their
 - `/robots.txt` and `/sitemap.xml` are served by the API (proxied by the storefront). The sitemap, canonical link and structured data appear only once `PUBLIC_SITE_URL` is set.
 - An open set (`/?set=rose-chrome`) gets its own page title and description.
 
+## WhatsApp messages (Meta Cloud API)
+
+Customers get WhatsApp messages only (no email). Meta requires an approved **template** for every message a business starts, so create these five in WhatsApp Manager > Message templates (category **Utility**, language **English**), with exactly this body text:
+
+| Template name        | Body                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `hn_order_placed`    | Hi {{1}}, thank you for your Happy Nails order {{2}} of {{3}}. We will message you when it ships.              |
+| `hn_order_shipped`   | Hi {{1}}, your Happy Nails order {{2}} has shipped with {{3}}. Track it here: {{4}}                            |
+| `hn_visit_confirmed` | Hi {{1}}, your Happy Nails home visit {{2}} is confirmed for {{3}} in {{4}}. {{5}}                             |
+| `hn_visit_reminder`  | Hi {{1}}, a reminder that your Happy Nails home visit is tomorrow, {{2}}. Reply here if you need to change it. |
+| `hn_visit_cancelled` | Hi {{1}}, your Happy Nails home visit {{2}} on {{3}} has been cancelled. Message us here to book another time. |
+
+Then set `WHATSAPP_ACCESS_TOKEN` (a permanent System User token) and `WHATSAPP_PHONE_NUMBER_ID` in `.env`. Until then messages are written to the API log with the number masked. The template texts live in `apps/api/src/config/whatsapp.ts`; keep them identical to what Meta approved.
+
+## Shipping (Shiprocket)
+
+1. In Shiprocket, create an API user (Settings > API > Configure) and note the exact name of your pickup address.
+2. Set `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD` and `SHIPROCKET_PICKUP_LOCATION` in `.env`. A **Ship with Shiprocket** button then appears on paid orders in the admin: it creates the shipment, assigns a courier, books the pickup and stores the AWB and tracking link.
+3. For automatic tracking, add a webhook in Shiprocket (Settings > API > Webhooks) to `https://<your-domain>/api/webhooks/courier-tracking` with a long random token, and set the same token as `SHIPROCKET_WEBHOOK_TOKEN`. Orders then move to shipped (the customer is messaged once) and delivered by themselves.
+
+Parcel size and weight sent to Shiprocket are placeholders in `apps/api/src/shipping/shiprocket.ts`; measure a packed kit and update them.
+
+## GST
+
+- Prices include GST. Each paid order or visit gets one tax invoice; each refund a credit note. Numbers run per financial year (HN/26-27/00001, HNCN/26-27/00001).
+- CGST + SGST applies within Uttar Pradesh (orders delivered in UP, visits in Noida); IGST elsewhere (including visits in Delhi and Gurgaon).
+- Rate 18%, HSN 3304 (press-on nails), SAC 996812 (delivery), SAC 999722 (manicure services). **Have your CA confirm these**; they are in `packages/shared/src/gst.ts`.
+- Customers open their invoice from their order or visit link. The admin GST page shows the month by place of supply and HSN/SAC, with a CSV export for filing.
+- After adding invoicing to existing data, run `docker compose exec api pnpm --filter @happynails/api backfill:invoices` once.
+
 ## Admin
 
 Open http://localhost:5174 and sign in. `pnpm seed` creates the first owner from `ADMIN_OWNER_EMAIL` and `ADMIN_OWNER_PASSWORD` in `.env` if no owner exists yet.
 
 - **Owner** can do everything, including prices and the catalogue, uploads, refunds, technicians, services and testimonials.
-- **Staff** handle day-to-day work: orders and tracking, bookings, and stock counts. There is no screen for adding staff yet; ask for one or create them in the database.
+- **Staff** handle day-to-day work: orders and tracking, bookings, and stock counts.
+- **Availability**: a month calendar per technician. Set exact start times for any date, close a day, or return it to the weekly pattern; customers see changes immediately. There is no screen for adding staff yet; ask for one or create them in the database.
 - Sessions are a 2-hour signed token in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/admin`, renewed while in use. Passwords are argon2id. Failed sign-ins are limited to 10 per 15 minutes per address.
 - Uploads (product photos, testimonial videos and posters) are checked by their actual bytes, limited to 5 MB for images and 50 MB for video, and stored on local disk under `uploads/` in development.
 
