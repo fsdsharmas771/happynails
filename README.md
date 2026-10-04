@@ -102,4 +102,13 @@ Customers track orders at `/order/<number>?token=<token>`; the token is in their
 - Customers choose to **pay online when booking** (Razorpay, same webhook as orders) or **after the visit** by UPI or cash. An online booking holds its slot as "awaiting payment" until the webhook confirms it; unpaid ones are cancelled after 30 minutes. The customer can retry payment or switch to paying after the visit. A payment that arrives after the slot was given away is recorded and the booking flagged for a refund instead of double-booking.
 - `pnpm seed` adds the prototype's services and add-ons and two **placeholder technicians** working every day at 10:00, 12:30, 15:00, 17:30 and 19:30, so the calendar works before the real team is added in the admin.
 
+## Admin
+
+Open http://localhost:5174 and sign in. `pnpm seed` creates the first owner from `ADMIN_OWNER_EMAIL` and `ADMIN_OWNER_PASSWORD` in `.env` if no owner exists yet.
+
+- **Owner** can do everything, including prices and the catalogue, uploads, refunds, technicians, services and testimonials.
+- **Staff** handle day-to-day work: orders and tracking, bookings, and stock counts. There is no screen for adding staff yet; ask for one or create them in the database.
+- Sessions are a 2-hour signed token in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/admin`, renewed while in use. Passwords are argon2id. Failed sign-ins are limited to 10 per 15 minutes per address.
+- Uploads (product photos, testimonial videos and posters) are checked by their actual bytes, limited to 5 MB for images and 50 MB for video, and stored on local disk under `uploads/` in development.
+
 A deployment outline will be added in the hardening phase.
